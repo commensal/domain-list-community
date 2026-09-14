@@ -38,19 +38,21 @@ jobs:
           echo "TAG_NAME=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
         shell: bash
 
-      - name: Download custom lists
+- name: Download custom lists
         run: |
+          # Создаем папку data, если её нет
+          mkdir -p code/data
           cd code/data
-          # 1. Полностью удаляем стандартную китайскую базу v2fly (чтобы файл весил минимум)
+          
+          # Очищаем на всякий случай
           rm -rf *
           
-          # 2. Скачиваем свежие списки itdog и сохраняем их как нужные нам категории
-          # Команда sed убирает лишние символы и префиксы, оставляя только чистые домены
+          # Скачиваем базы
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/block.lst" | sed 's/^domain://g' | grep -v "^#" > ru-block
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/porn.lst" | sed 's/^domain://g' | grep -v "^#" > porn
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst" | sed 's/^domain://g' | grep -v "^#" > geoblock
           
-          # 3. Вписываем нужные соцсети вручную (чтобы не тянуть лишнее)
+          # Создаем кастомные
           echo -e "facebook.com\ninstagram.com\nfbcdn.net\nmeta.com\nthreads.net" > meta
           echo -e "telegram.org\ntelegram.me\nt.me\ntdesktop.org" > telegram
           echo -e "youtube.com\nyoutu.be\ngooglevideo.com\nytimg.com\nggpht.com" > youtube
