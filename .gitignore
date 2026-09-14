@@ -8,4 +8,8 @@
 /*.dat
 
 # Exported plaintext lists.
+/*.txt
+/*.yml
 
+!my-domains.txt
+!my-ips.txt
