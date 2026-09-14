@@ -69,29 +69,73 @@ jobs:
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/twitter.lst" | grep -v "^#" > twitter.txt
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/discord.lst" | grep -v "^#" > discord.txt
           
-          # Создаем JSON-конфиг
-          cat > config.json << 'EOF'
-          {
-            "input": [
-              { "type": "text", "action": "add", "args": { "name": "telegram", "uri": "telegram.txt" } },
-              { "type": "text", "action": "add", "args": { "name": "meta", "uri": "meta.txt" } },
-              { "type": "text", "action": "add", "args": { "name": "twitter", "uri": "twitter.txt" } },
-              { "type": "text", "action": "add", "args": { "name": "discord", "uri": "discord.txt" } }
-            ],
-            "output": [
-              { "type": "v2ray", "action": "output", "args": { "outputDir": "../" } }
-            ]
+          # Создаем собственный Go-скрипт для прямой компиляции geoip.dat
+          cat > pack.go << 'EOF'
+          package main
+
+          import (
+          	"bufio"
+          	"log"
+          	"net"
+          	"os"
+          	"strings"
+
+          	"google.golang.org/protobuf/proto"
+          	"github.com/v2fly/v2ray-core/v5/app/router/routercommon"
+          )
+
+          func main() {
+          	var geoipList routercommon.GeoIPList
+          	files := []string{"telegram", "meta", "twitter", "discord"}
+          	
+          	for _, name := range files {
+          		file, err := os.Open(name + ".txt")
+          		if err != nil { log.Fatal(err) }
+          		
+          		geoip := &routercommon.GeoIP{ CountryCode: strings.ToUpper(name) }
+          		scanner := bufio.NewScanner(file)
+          		
+          		for scanner.Scan() {
+          			line := strings.TrimSpace(scanner.Text())
+          			if line == "" || strings.HasPrefix(line, "#") { continue }
+          			
+          			ip, ipNet, err := net.ParseCIDR(line)
+          			if err != nil {
+          				ip = net.ParseIP(line)
+          				if ip == nil { continue }
+          				if ip.To4() != nil {
+          					ipNet = &net.IPNet{IP: ip, Mask: net.CIDRMask(32, 32)}
+          				} else {
+          					ipNet = &net.IPNet{IP: ip, Mask: net.CIDRMask(128, 128)}
+          				}
+          			}
+
+          			ipBytes := ipNet.IP
+          			if ipNet.IP.To4() != nil { ipBytes = ipNet.IP.To4() }
+          			ones, _ := ipNet.Mask.Size()
+          			
+          			geoip.Cidr = append(geoip.Cidr, &routercommon.CIDR{
+          				Ip:     ipBytes,
+          				Prefix: uint32(ones),
+          			})
+          		}
+          		file.Close()
+          		geoipList.Entry = append(geoipList.Entry, geoip)
+          	}
+
+          	out, err := proto.Marshal(&geoipList)
+          	if err != nil { log.Fatal(err) }
+          	os.WriteFile("geoip.dat", out, 0644)
           }
           EOF
           
-          # Клонируем официальный репозиторий компилятора geoip
-          git clone https://github.com/v2fly/geoip.git compiler
-          cd compiler
+          # Инициализируем модуль, подтягиваем зависимости ядра V2Ray и собираем файл
+          go mod init geoip
+          go mod tidy
+          go run pack.go
           
-          # Запускаем компиляцию, используя наш конфиг
-          go run ./ -c ../config.json
-          
-          cd ../../
+          mv geoip.dat ../
+          cd ../
           rm -rf geoip-build
 
       - name: Generate hashes and archives
