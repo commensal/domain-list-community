@@ -1,0 +1,7 @@
+go: downloading github.com/v2fly/v2ray-core/v5 v5.52.0
+go: downloading google.golang.org/protobuf v1.36.12
+go: downloading github.com/golang/protobuf v1.5.4
+go: downloading github.com/adrg/xdg v0.5.3
+using domain lists data in "./data"
+[Fatal] critical error: failed to loadData: invalid list name: "GOOGLE_AI"
+exit status 1
