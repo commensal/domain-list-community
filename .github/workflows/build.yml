@@ -8,7 +8,7 @@ on:
     paths-ignore:
       - "**/README.md"
   schedule:
-    - cron: "0 2 * * *" # Автоматическое обновление каждый день в 02:00
+    - cron: "0 2 * * *" 
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -46,6 +46,10 @@ jobs:
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/porn.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > porn
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > geoblock
           
+          # Читаем твой личный список доменов из корня репозитория
+          touch ../../my-domains.txt
+          cat ../../my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom
+          
           echo -e "facebook.com\ninstagram.com\nfbcdn.net\nmeta.com\nthreads.net" > meta
           echo -e "telegram.org\ntelegram.me\nt.me\ntdesktop.org" > telegram
           echo -e "youtube.com\nyoutu.be\ngooglevideo.com\nytimg.com\nggpht.com" > youtube
@@ -63,13 +67,14 @@ jobs:
           mkdir -p geoip-build
           cd geoip-build
           
-          # Скачиваем подсети (Subnets) от itdog
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/telegram.lst" | grep -v "^#" > telegram.txt
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/meta.lst" | grep -v "^#" > meta.txt
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/twitter.lst" | grep -v "^#" > twitter.txt
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/discord.lst" | grep -v "^#" > discord.txt
           
-          # Создаем собственный Go-скрипт для прямой компиляции geoip.dat
+          # Читаем твой личный список IP
+          touch ../../my-ips.txt
+          cat ../../my-ips.txt | grep -v "^#" > custom.txt
+          
           cat > pack.go << 'EOF'
           package main
 
@@ -86,7 +91,7 @@ jobs:
 
           func main() {
           	var geoipList routercommon.GeoIPList
-          	files := []string{"telegram", "meta", "twitter", "discord"}
+          	files := []string{"telegram", "meta", "twitter", "custom"}
           	
           	for _, name := range files {
           		file, err := os.Open(name + ".txt")
@@ -120,7 +125,10 @@ jobs:
           			})
           		}
           		file.Close()
-          		geoipList.Entry = append(geoipList.Entry, geoip)
+          		
+          		if len(geoip.Cidr) > 0 {
+          			geoipList.Entry = append(geoipList.Entry, geoip)
+          		}
           	}
 
           	out, err := proto.Marshal(&geoipList)
@@ -129,7 +137,6 @@ jobs:
           }
           EOF
           
-          # Инициализируем модуль, подтягиваем зависимости ядра V2Ray и собираем файл
           go mod init geoip
           go mod tidy
           go run pack.go
