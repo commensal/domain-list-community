@@ -47,7 +47,9 @@ jobs:
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > geoblock
           
           # Читаем твой личный список доменов из корня репозитория (если он существует)
-          if [ -f "../../my-domains.txt" ]; then
+          if [ -f "../../code/my-domains.txt" ]; then
+            cat ../../code/my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom
+          elif [ -f "../../my-domains.txt" ]; then
             cat ../../my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom
           else
             echo "example.com" > custom
@@ -76,28 +78,49 @@ jobs:
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/twitter.lst" | grep -v "^#" > twitter.txt
           
           # Читаем твой личный список IP (если он есть)
-          if [ -f "../my-ips.txt" ]; then
+          if [ -f "../code/my-ips.txt" ]; then
+            cat ../code/my-ips.txt | grep -v "^#" > custom.txt
+          elif [ -f "../my-ips.txt" ]; then
             cat ../my-ips.txt | grep -v "^#" > custom.txt
           else
             echo "127.0.0.1/32" > custom.txt
           fi
           
-          # Скачиваем официальную утилиту Xray-core
-          wget https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
-          unzip Xray-linux-64.zip xray
-          chmod +x xray
-          
-          # У Xray другая логика сборки: он ожидает папку, где каждый текстовый файл = категория
+          # У v2fly/geoip логика сборки ожидает текстовые файлы в директории
           mkdir -p geoip-source
-          mv telegram.txt geoip-source/telegram
-          mv meta.txt geoip-source/meta
-          mv twitter.txt geoip-source/twitter
-          mv custom.txt geoip-source/custom
+          mv telegram.txt geoip-source/telegram.txt
+          mv meta.txt geoip-source/meta.txt
+          mv twitter.txt geoip-source/twitter.txt
+          mv custom.txt geoip-source/custom.txt
           
-          # Запускаем компиляцию через Xray
-          ./xray pack geoip -d geoip-source -o geoip.dat
+          # Конфиг для генерации
+          cat << 'EOF' > config.json
+          {
+            "input": [
+              {
+                "type": "text",
+                "action": "add",
+                "args": {
+                  "inputDir": "./geoip-source"
+                }
+              }
+            ],
+            "output": [
+              {
+                "type": "v2rayGeoIPDat",
+                "action": "output",
+                "args": {
+                  "outputDir": "../",
+                  "outputName": "geoip.dat"
+                }
+              }
+            ]
+          }
+          EOF
           
-          mv geoip.dat ../
+          # Запускаем компиляцию через v2fly/geoip
+          go run github.com/v2fly/geoip@latest -c config.json
+          
           cd ../
           rm -rf geoip-build
 
