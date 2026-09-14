@@ -1,4 +1,4 @@
-name: Build geosite.dat
+name: Build geosite and geoip
 
 on:
   workflow_dispatch:
@@ -38,17 +38,15 @@ jobs:
           echo "TAG_NAME=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
         shell: bash
 
-      - name: Download custom lists
+      - name: Download custom lists (geosite)
         run: |
           mkdir -p code/data
           cd code/data
           rm -rf *
-          # Скачиваем базы и вырезаем комментарии, префиксы и кривые домены (начинающиеся с точки)
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/block.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > ru-block
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/porn.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > porn
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > geoblock
           
-          # Создаем кастомные
           echo -e "facebook.com\ninstagram.com\nfbcdn.net\nmeta.com\nthreads.net" > meta
           echo -e "telegram.org\ntelegram.me\nt.me\ntdesktop.org" > telegram
           echo -e "youtube.com\nyoutu.be\ngooglevideo.com\nytimg.com\nggpht.com" > youtube
@@ -61,11 +59,46 @@ jobs:
           mv dlc.dat geosite.dat
           rm -rf code
 
+      - name: Build geoip.dat
+        run: |
+          mkdir -p geoip-build
+          cd geoip-build
+          
+          # Скачиваем подсети (Subnets) от itdog
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/telegram.lst" | grep -v "^#" > telegram.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/meta.lst" | grep -v "^#" > meta.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/twitter.lst" | grep -v "^#" > twitter.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/discord.lst" | grep -v "^#" > discord.txt
+          
+          # Создаем JSON-конфиг для компилятора geoip
+          cat > config.json << 'EOF'
+          {
+            "input": [
+              { "type": "text", "action": "add", "args": { "name": "telegram", "uri": "telegram.txt" } },
+              { "type": "text", "action": "add", "args": { "name": "meta", "uri": "meta.txt" } },
+              { "type": "text", "action": "add", "args": { "name": "twitter", "uri": "twitter.txt" } },
+              { "type": "text", "action": "add", "args": { "name": "discord", "uri": "discord.txt" } }
+            ],
+            "output": [
+              { "type": "v2ray", "action": "output", "args": { "outputDir": "../" } }
+            ]
+          }
+          EOF
+          
+          # Запускаем официальный компилятор geoip.dat
+          go run github.com/v2fly/geoip/cmd/geoip@latest -c config.json
+          cd ../
+          rm -rf geoip-build
+
       - name: Generate hashes and archives
         run: |
           sha256sum geosite.dat > geosite.dat.sha256sum
           zip -9 geosite.dat.zip geosite.dat
           sha256sum geosite.dat.zip > geosite.dat.zip.sha256sum
+          
+          sha256sum geoip.dat > geoip.dat.sha256sum
+          zip -9 geoip.dat.zip geoip.dat
+          sha256sum geoip.dat.zip > geoip.dat.zip.sha256sum
 
       - name: Git push assets to "release" branch
         run: |
@@ -73,13 +106,13 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b release
-          git add geosite.dat geosite.dat.zip *.sha256sum
+          git add geosite.dat geoip.dat *.zip *.sha256sum
           git commit -m "${{ env.RELEASE_NAME }}"
           git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f -u origin release
 
       - name: Release and upload assets
         run: |
-          gh release create ${{ env.TAG_NAME }} --target ${{ github.sha }} --generate-notes --latest --title ${{ env.RELEASE_NAME }} ./geosite.dat ./geosite.dat.zip ./*.sha256sum
+          gh release create ${{ env.TAG_NAME }} --target ${{ github.sha }} --generate-notes --latest --title ${{ env.RELEASE_NAME }} ./geosite.dat ./geosite.dat.zip ./geoip.dat ./geoip.dat.zip ./*.sha256sum
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
