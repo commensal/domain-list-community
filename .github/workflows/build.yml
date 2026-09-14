@@ -72,10 +72,18 @@ jobs:
           mkdir -p geoip-build
           cd geoip-build
           
-          # Скачиваем подсети от itdog
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/telegram.lst" | grep -v "^#" > telegram.txt
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/meta.lst" | grep -v "^#" > meta.txt
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/twitter.lst" | grep -v "^#" > twitter.txt
+          # Скачиваем подсети от itdog (объединяем IPv4 и IPv6)
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/telegram.lst" | grep -v "^#" > telegram.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/telegram.lst" | grep -v "^#" >> telegram.txt
+          
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/meta.lst" | grep -v "^#" > meta.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/meta.lst" | grep -v "^#" >> meta.txt
+          
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/twitter.lst" | grep -v "^#" > twitter.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/twitter.lst" | grep -v "^#" >> twitter.txt
+          
+          # Удаляем возможные сообщения 404, если curl скачал страницу с ошибкой
+          sed -i '/404/d' telegram.txt meta.txt twitter.txt || true
           
           # Читаем твой личный список IP (если он есть)
           if [ -f "../code/my-ips.txt" ]; then
