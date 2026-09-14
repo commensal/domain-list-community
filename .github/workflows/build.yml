@@ -37,31 +37,54 @@ jobs:
           echo "TAG_NAME=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
         shell: bash
 
+      - name: Clone itdoginfo/allow-domains
+        run: |
+          git clone https://github.com/itdoginfo/allow-domains.git itdog-domains
+
       - name: Download custom lists (geosite)
         run: |
           mkdir -p code/data
           cd code/data
           rm -rf *
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/block.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > ru-block || true
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/porn.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > porn || true
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > geoblock || true
+          
+          # Обрабатываем Categories
+          for f in ../../itdog-domains/Categories/*.lst; do
+              [ -e "$f" ] || continue
+              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]')
+              if [ "$name" == "block" ]; then name="ru-block"; fi
+              cat "$f" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." >> "$name" || true
+          done
+          
+          # Обрабатываем Services
+          for f in ../../itdog-domains/Services/*.lst; do
+              [ -e "$f" ] || continue
+              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]')
+              cat "$f" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." >> "$name" || true
+          done
+          
+          # Добавляем хардкод (на всякий случай, чтобы не потерять то, что было)
+          echo -e "facebook.com\ninstagram.com\nfbcdn.net\nmeta.com\nthreads.net" >> meta
+          echo -e "telegram.org\ntelegram.me\nt.me\ntdesktop.org" >> telegram
+          echo -e "youtube.com\nyoutu.be\ngooglevideo.com\nytimg.com\nggpht.com" >> youtube
           
           # Читаем твой личный список доменов из корня репозитория (если он существует)
           if [ -f "../../code/my-domains.txt" ]; then
-            cat ../../code/my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom || true
+            cat ../../code/my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' >> custom || true
           elif [ -f "../../my-domains.txt" ]; then
-            cat ../../my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom || true
-          else
-            echo "example.com" > custom
+            cat ../../my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' >> custom || true
           fi
+          
+          # Убираем дубликаты и пустые строки во всех сгенерированных списках
+          for f in *; do
+              if [ -f "$f" ]; then
+                  sort -u "$f" | sed '/^$/d' > "$f.tmp"
+                  mv "$f.tmp" "$f"
+              fi
+          done
           
           if [ ! -s custom ]; then
             echo "example.com" > custom
           fi
-          
-          echo -e "facebook.com\ninstagram.com\nfbcdn.net\nmeta.com\nthreads.net" > meta
-          echo -e "telegram.org\ntelegram.me\nt.me\ntdesktop.org" > telegram
-          echo -e "youtube.com\nyoutu.be\ngooglevideo.com\nytimg.com\nggpht.com" > youtube
 
       - name: Build geosite.dat
         run: |
@@ -73,41 +96,39 @@ jobs:
 
       - name: Build geoip.dat
         run: |
-          mkdir -p geoip-build
+          mkdir -p geoip-build/geoip-source
           cd geoip-build
           
-          # Скачиваем подсети от itdog (объединяем IPv4 и IPv6)
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/telegram.lst" | grep -v "^#" > telegram.txt || true
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/telegram.lst" | grep -v "^#" >> telegram.txt || true
+          # Обрабатываем IPv4 подсети
+          for f in ../itdog-domains/Subnets/IPv4/*.lst; do
+              [ -e "$f" ] || continue
+              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]')
+              cat "$f" | grep -v "^#" >> geoip-source/${name}.txt || true
+          done
           
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/meta.lst" | grep -v "^#" > meta.txt || true
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/meta.lst" | grep -v "^#" >> meta.txt || true
-          
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/twitter.lst" | grep -v "^#" > twitter.txt || true
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/twitter.lst" | grep -v "^#" >> twitter.txt || true
-          
-          # Удаляем возможные сообщения 404, если curl скачал страницу с ошибкой
-          sed -i '/404/d' telegram.txt meta.txt twitter.txt || true
+          # Обрабатываем IPv6 подсети
+          for f in ../itdog-domains/Subnets/IPv6/*.lst; do
+              [ -e "$f" ] || continue
+              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]')
+              cat "$f" | grep -v "^#" >> geoip-source/${name}.txt || true
+          done
           
           # Читаем твой личный список IP (если он есть)
           if [ -f "../code/my-ips.txt" ]; then
-            cat ../code/my-ips.txt | grep -v "^#" > custom.txt || true
+            cat ../code/my-ips.txt | grep -v "^#" >> geoip-source/custom.txt || true
           elif [ -f "../my-ips.txt" ]; then
-            cat ../my-ips.txt | grep -v "^#" > custom.txt || true
-          else
-            echo "127.0.0.1/32" > custom.txt
+            cat ../my-ips.txt | grep -v "^#" >> geoip-source/custom.txt || true
           fi
           
-          if [ ! -s custom.txt ]; then
-            echo "127.0.0.1/32" > custom.txt
-          fi
-          
-          # У v2fly/geoip логика сборки ожидает текстовые файлы в директории
-          mkdir -p geoip-source
-          mv telegram.txt geoip-source/telegram.txt
-          mv meta.txt geoip-source/meta.txt
-          mv twitter.txt geoip-source/twitter.txt
-          mv custom.txt geoip-source/custom.txt
+          # Убираем дубликаты и пустые строки, добавляем фейковый IP для пустых файлов
+          for f in geoip-source/*.txt; do
+              [ -e "$f" ] || continue
+              sort -u "$f" | sed '/^$/d' > "$f.tmp"
+              if [ ! -s "$f.tmp" ]; then
+                  echo "127.0.0.1/32" > "$f.tmp"
+              fi
+              mv "$f.tmp" "$f"
+          done
           
           # Конфиг для генерации
           cat << 'EOF' > config.json
@@ -138,7 +159,7 @@ jobs:
           go run github.com/v2fly/geoip@latest -c config.json
           
           cd ../
-          rm -rf geoip-build
+          rm -rf geoip-build itdog-domains
 
       - name: Generate hashes and archives
         run: |
