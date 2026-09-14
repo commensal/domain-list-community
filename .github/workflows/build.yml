@@ -21,15 +21,15 @@ jobs:
 
     steps:
       - name: Checkout codebase
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
           path: code
 
       - name: Setup Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@v5
         with:
-          go-version: '>=1.26.0'
+          go-version: 'stable'
 
       - name: Set variables
         run: |
@@ -46,9 +46,12 @@ jobs:
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/porn.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > porn
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > geoblock
           
-          # Читаем твой личный список доменов из корня репозитория
-          touch ../../my-domains.txt
-          cat ../../my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom
+          # Читаем твой личный список доменов из корня репозитория (если он существует)
+          if [ -f "../my-domains.txt" ]; then
+            cat ../my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom
+          else
+            touch custom
+          fi
           
           echo -e "facebook.com\ninstagram.com\nfbcdn.net\nmeta.com\nthreads.net" > meta
           echo -e "telegram.org\ntelegram.me\nt.me\ntdesktop.org" > telegram
@@ -60,7 +63,7 @@ jobs:
           go run ./ --outputdir=../
           cd ../
           mv dlc.dat geosite.dat
-          rm -rf code
+          # Папку code пока НЕ удаляем, она нам нужна для следующего шага
 
       - name: Build geoip.dat
         run: |
@@ -71,9 +74,12 @@ jobs:
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/meta.lst" | grep -v "^#" > meta.txt
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/twitter.lst" | grep -v "^#" > twitter.txt
           
-          # Читаем твой личный список IP
-          touch ../../my-ips.txt
-          cat ../../my-ips.txt | grep -v "^#" > custom.txt
+          # Читаем твой личный список IP из корня репозитория (если создашь файл my-ips.txt)
+          if [ -f "../code/my-ips.txt" ]; then
+            cat ../code/my-ips.txt | grep -v "^#" > custom.txt
+          else
+            touch custom.txt
+          fi
           
           cat > pack.go << 'EOF'
           package main
@@ -137,13 +143,17 @@ jobs:
           }
           EOF
           
+          # Явно скачиваем библиотеки, чтобы компилятор не потерялся
           go mod init geoip
+          go get google.golang.org/protobuf/proto
+          go get github.com/v2fly/v2ray-core/v5/app/router/routercommon
           go mod tidy
           go run pack.go
           
           mv geoip.dat ../
           cd ../
           rm -rf geoip-build
+          rm -rf code
 
       - name: Generate hashes and archives
         run: |
