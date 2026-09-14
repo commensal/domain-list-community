@@ -50,7 +50,7 @@ jobs:
           # Обрабатываем Categories
           for f in ../../itdog-domains/Categories/*.lst; do
               [ -e "$f" ] || continue
-              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]')
+              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]' | tr '_' '-')
               if [ "$name" == "block" ]; then name="ru-block"; fi
               cat "$f" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." >> "$name" || true
           done
@@ -58,7 +58,7 @@ jobs:
           # Обрабатываем Services
           for f in ../../itdog-domains/Services/*.lst; do
               [ -e "$f" ] || continue
-              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]')
+              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]' | tr '_' '-')
               cat "$f" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." >> "$name" || true
           done
           
@@ -92,10 +92,7 @@ jobs:
       - name: Build geosite.dat
         run: |
           cd code || exit 1
-          if ! go run ./ --outputdir=../ > ../error_geosite.log 2>&1; then
-             cat ../error_geosite.log
-             exit 1
-          fi
+          go run ./ --outputdir=../
           cd ../
           mv dlc.dat geosite.dat
 
@@ -107,14 +104,14 @@ jobs:
           # Обрабатываем IPv4 подсети
           for f in ../itdog-domains/Subnets/IPv4/*.lst; do
               [ -e "$f" ] || continue
-              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]')
+              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]' | tr '_' '-')
               cat "$f" | grep -v "^#" >> geoip-source/${name}.txt || true
           done
           
           # Обрабатываем IPv6 подсети
           for f in ../itdog-domains/Subnets/IPv6/*.lst; do
               [ -e "$f" ] || continue
-              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]')
+              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]' | tr '_' '-')
               cat "$f" | grep -v "^#" >> geoip-source/${name}.txt || true
           done
           
@@ -165,18 +162,6 @@ jobs:
           
           cd ../
           rm -rf geoip-build itdog-domains
-
-      - name: Push Error Log
-        if: failure()
-        run: |
-          git init
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b error-logs
-          git add error_geosite.log || true
-          git commit -m "Error log" || true
-          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" || true
-          git push -f origin error-logs || true
 
       - name: Generate hashes and archives
         run: |
