@@ -42,16 +42,20 @@ jobs:
           mkdir -p code/data
           cd code/data
           rm -rf *
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/block.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > ru-block
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/porn.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > porn
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > geoblock
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/block.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > ru-block || true
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/porn.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > porn || true
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > geoblock || true
           
           # Читаем твой личный список доменов из корня репозитория (если он существует)
           if [ -f "../../code/my-domains.txt" ]; then
-            cat ../../code/my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom
+            cat ../../code/my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom || true
           elif [ -f "../../my-domains.txt" ]; then
-            cat ../../my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom
+            cat ../../my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' > custom || true
           else
+            echo "example.com" > custom
+          fi
+          
+          if [ ! -s custom ]; then
             echo "example.com" > custom
           fi
           
@@ -73,24 +77,28 @@ jobs:
           cd geoip-build
           
           # Скачиваем подсети от itdog (объединяем IPv4 и IPv6)
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/telegram.lst" | grep -v "^#" > telegram.txt
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/telegram.lst" | grep -v "^#" >> telegram.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/telegram.lst" | grep -v "^#" > telegram.txt || true
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/telegram.lst" | grep -v "^#" >> telegram.txt || true
           
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/meta.lst" | grep -v "^#" > meta.txt
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/meta.lst" | grep -v "^#" >> meta.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/meta.lst" | grep -v "^#" > meta.txt || true
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/meta.lst" | grep -v "^#" >> meta.txt || true
           
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/twitter.lst" | grep -v "^#" > twitter.txt
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/twitter.lst" | grep -v "^#" >> twitter.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv4/twitter.lst" | grep -v "^#" > twitter.txt || true
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/IPv6/twitter.lst" | grep -v "^#" >> twitter.txt || true
           
           # Удаляем возможные сообщения 404, если curl скачал страницу с ошибкой
           sed -i '/404/d' telegram.txt meta.txt twitter.txt || true
           
           # Читаем твой личный список IP (если он есть)
           if [ -f "../code/my-ips.txt" ]; then
-            cat ../code/my-ips.txt | grep -v "^#" > custom.txt
+            cat ../code/my-ips.txt | grep -v "^#" > custom.txt || true
           elif [ -f "../my-ips.txt" ]; then
-            cat ../my-ips.txt | grep -v "^#" > custom.txt
+            cat ../my-ips.txt | grep -v "^#" > custom.txt || true
           else
+            echo "127.0.0.1/32" > custom.txt
+          fi
+          
+          if [ ! -s custom.txt ]; then
             echo "127.0.0.1/32" > custom.txt
           fi
           
