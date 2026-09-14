@@ -43,9 +43,12 @@ jobs:
           mkdir -p code/data
           cd code/data
           rm -rf *
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/block.lst" | sed 's/^domain://g' | grep -v "^#" > ru-block
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/porn.lst" | sed 's/^domain://g' | grep -v "^#" > porn
-          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst" | sed 's/^domain://g' | grep -v "^#" > geoblock
+          # Скачиваем базы и вырезаем комментарии, префиксы и кривые домены (начинающиеся с точки)
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/block.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > ru-block
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/porn.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > porn
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Categories/geoblock.lst" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." > geoblock
+          
+          # Создаем кастомные
           echo -e "facebook.com\ninstagram.com\nfbcdn.net\nmeta.com\nthreads.net" > meta
           echo -e "telegram.org\ntelegram.me\nt.me\ntdesktop.org" > telegram
           echo -e "youtube.com\nyoutu.be\ngooglevideo.com\nytimg.com\nggpht.com" > youtube
