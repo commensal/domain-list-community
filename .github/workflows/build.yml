@@ -69,6 +69,40 @@ jobs:
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/twitter.lst" | grep -v "^#" > twitter.txt
           curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/discord.lst" | grep -v "^#" > discord.txt
           
+          # Создаем JSON-конфиг
+          cat > config.json << 'EOF'
+          {
+            "input": [
+              { "type": "text", "action": "add", "args": { "name": "telegram", "uri": "telegram.txt" } },
+              { "type": "text", "action": "add", "args": { "name": "meta", "uri": "meta.txt" } },
+              { "type": "text", "action": "add", "args": { "name": "twitter", "uri": "twitter.txt" } },
+              { "type": "text", "action": "add", "args": { "name": "discord", "uri": "discord.txt" } }
+            ],
+            "output": [
+              { "type": "v2ray", "action": "output", "args": { "outputDir": "../" } }
+            ]
+          }
+          EOF
+          
+          # Клонируем официальный репозиторий компилятора geoip
+          git clone https://github.com/v2fly/geoip.git compiler
+          cd compiler
+          
+          # Запускаем компиляцию, используя наш конфиг
+          go run ./ -c ../config.json
+          
+          cd ../../
+          rm -rf geoip-build
+        run: |
+          mkdir -p geoip-build
+          cd geoip-build
+          
+          # Скачиваем подсети (Subnets) от itdog
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/telegram.lst" | grep -v "^#" > telegram.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/meta.lst" | grep -v "^#" > meta.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/twitter.lst" | grep -v "^#" > twitter.txt
+          curl -sL "https://raw.githubusercontent.com/itdoginfo/allow-domains/main/Subnets/discord.lst" | grep -v "^#" > discord.txt
+          
           # Создаем JSON-конфиг для компилятора geoip
           cat > config.json << 'EOF'
           {
