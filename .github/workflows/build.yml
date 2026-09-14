@@ -92,10 +92,12 @@ jobs:
       - name: Build geosite.dat
         run: |
           cd code || exit 1
-          go run ./ --outputdir=../
+          if ! go run ./ --outputdir=../ > ../error_geosite.log 2>&1; then
+             cat ../error_geosite.log
+             exit 1
+          fi
           cd ../
           mv dlc.dat geosite.dat
-          # Оставляем папку code, она нам больше не помешает
 
       - name: Build geoip.dat
         run: |
@@ -163,6 +165,18 @@ jobs:
           
           cd ../
           rm -rf geoip-build itdog-domains
+
+      - name: Push Error Log
+        if: failure()
+        run: |
+          git init
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b error-logs
+          git add error_geosite.log || true
+          git commit -m "Error log" || true
+          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" || true
+          git push -f origin error-logs || true
 
       - name: Generate hashes and archives
         run: |
