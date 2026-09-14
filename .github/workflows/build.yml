@@ -63,8 +63,11 @@ jobs:
           done
           
           # Добавляем хардкод (на всякий случай, чтобы не потерять то, что было)
+          echo "" >> meta
           echo -e "facebook.com\ninstagram.com\nfbcdn.net\nmeta.com\nthreads.net" >> meta
+          echo "" >> telegram
           echo -e "telegram.org\ntelegram.me\nt.me\ntdesktop.org" >> telegram
+          echo "" >> youtube
           echo -e "youtube.com\nyoutu.be\ngooglevideo.com\nytimg.com\nggpht.com" >> youtube
           
           # Читаем твой личный список доменов из корня репозитория (если он существует)
@@ -74,10 +77,10 @@ jobs:
             cat ../../my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' >> custom || true
           fi
           
-          # Убираем дубликаты и пустые строки во всех сгенерированных списках
+          # Убираем дубликаты, пустые строки и Windows переносы (\r) во всех сгенерированных списках
           for f in *; do
               if [ -f "$f" ]; then
-                  sort -u "$f" | sed '/^$/d' > "$f.tmp"
+                  tr -d '\r' < "$f" | sort -u | sed '/^$/d' > "$f.tmp"
                   mv "$f.tmp" "$f"
               fi
           done
@@ -120,10 +123,10 @@ jobs:
             cat ../my-ips.txt | grep -v "^#" >> geoip-source/custom.txt || true
           fi
           
-          # Убираем дубликаты и пустые строки, добавляем фейковый IP для пустых файлов
+          # Убираем дубликаты, пустые строки и \r, добавляем фейковый IP для пустых файлов
           for f in geoip-source/*.txt; do
               [ -e "$f" ] || continue
-              sort -u "$f" | sed '/^$/d' > "$f.tmp"
+              tr -d '\r' < "$f" | sort -u | sed '/^$/d' > "$f.tmp"
               if [ ! -s "$f.tmp" ]; then
                   echo "127.0.0.1/32" > "$f.tmp"
               fi
