@@ -15,12 +15,14 @@
 
 Нажмите на ссылку ниже **с телефона** — профиль автоматически добавится в приложение.
 
-| Клиент | Установить профиль |
-| :--- | :--- |
-| 🟢 **Happ** (iOS / Android) | [📲 **Добавить в Happ**](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/HAPP/DEFAULT.DEEPLINK) |
-| 🔵 **Incy** (iOS / Android) | [📲 **Добавить в Incy**](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/INCY/DEFAULT.DEEPLINK) |
+| Клиент | 📦 Легкий профиль (Без RU-BLOCK/GEOBLOCK) | 🔥 Полный профиль (Все категории) |
+| :--- | :--- | :--- |
+| 🟢 **Happ** (iOS / Android) | [📲 **Добавить в Happ**](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/HAPP/LIGHT.DEEPLINK) | [📲 **Добавить в Happ**](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/HAPP/DEFAULT.DEEPLINK) |
+| 🔵 **Incy** (iOS / Android) | [📲 **Добавить в Incy**](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/INCY/LIGHT.DEEPLINK) | [📲 **Добавить в Incy**](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/INCY/DEFAULT.DEEPLINK) |
 
-> 💡 **Как это работает?** При нажатии на ссылку браузер открывает файл с deeplink (`happ://...`), и мобильная ОС автоматически перехватывает его, передавая конфигурацию прямо в приложение.
+> 💡 **В чем разница?** 
+> * **Легкий профиль** потребляет меньше оперативной памяти устройства и быстрее загружается. Он подходит для разблокировки основных социальных сетей, ИИ (Gemini, ChatGPT) и зарубежных хостингов.
+> * **Полный профиль** дополнительно включает масштабные базы `RU-BLOCK` (весь реестр РКН) и `GEOBLOCK`, из-за чего может требовать чуть больше ресурсов телефона при загрузке.
 
 ---
 
@@ -28,8 +30,21 @@
 
 Если вы настраиваете приложение вручную, скопируйте нужную ссылку ниже:
 
-#### 🔥 1. Полный профиль (Рекомендуется — со всеми категориями)
-Включает: `RU-BLOCK`, `GEOBLOCK`, `DISCORD`, `GOOGLE-AI`, `TELEGRAM`, `META`, `YOUTUBE`, `TWITTER`, `TIKTOK`, `ROBLOX`, `CLOUDFLARE`, `CLOUDFRONT`, `DIGITALOCEAN`, `HETZNER`, `OVH`, `HDREZKA`, `NEWS`, `HODCA`, `PORN`, `ANIME` + все подсети IP (`geoip`).
+#### 📦 1. Легкий профиль (Меньше потребляет памяти)
+Базовый набор правил. Включает: `DISCORD`, `GOOGLE-AI`, `TELEGRAM`, `META`, `YOUTUBE`, `TWITTER`, `TIKTOK`, `ROBLOX`, `CLOUDFLARE`, `CLOUDFRONT`, `DIGITALOCEAN`, `HETZNER`, `OVH`, `HDREZKA`, `NEWS`, `HODCA`, `PORN`, `ANIME` + все подсети IP (`geoip`).
+
+* **Для приложения Happ:**
+```text
+happ://routing/add/ewogICAgIkJsb2NrSXAiOiBbXSwKICAgICJCbG9ja1NpdGVzIjogWwogICAgICAgICJhcHBjZW50ZXIubXMiLAogICAgICAgICJmaXJlYmFzZS5pbyIsCiAgICAgICAgImNyYXNobHl0aWNzLmNvbSIKICAgIF0sCiAgICAiRGlyZWN0SXAiOiBbCiAgICAgICAgIjEwLjAuMC4wLzgiLAogICAgICAgICIxNzIuMTYuMC4wLzEyIiwKICAgICAgICAiMTkyLjE2OC4wLjAvMTYiLAogICAgICAgICIxNjkuMjU0LjAuMC8xNiIsCiAgICAgICAgIjIyNC4wLjAuMC80IiwKICAgICAgICAiMjU1LjI1NS4yNTUuMjU1IgogICAgXSwKICAgICJEaXJlY3RTaXRlcyI6IFtdLAogICAgIkRuc0hvc3RzIjogewogICAgICAgICJjbG91ZGZsYXJlLWRucy5jb20iOiAiMS4xLjEuMSIsCiAgICAgICAgImRucy5nb29nbGUiOiAiOC44LjguOCIKICAgIH0sCiAgICAiRG9tYWluU3RyYXRlZ3kiOiAiSVBJZk5vbk1hdGNoIiwKICAgICJEb21lc3RpY0ROU0RvbWFpbiI6ICJodHRwczovL2dlb2hpZGUucnUvZG5zLXF1ZXJ5IiwKICAgICJEb21lc3RpY0ROU0lQIjogIjQ1LjE1NS4yMDQuMTkwIiwKICAgICJEb21lc3RpY0ROU1R5cGUiOiAiRG9IIiwKICAgICJGYWtlRE5TIjogInRydWUiLAogICAgIkdlb2lwdXJsIjogImh0dHBzOi8vY2RuLmpzZGVsaXZyLm5ldC9naC9jb21tZW5zYWwvZG9tYWluLWxpc3QtY29tbXVuaXR5QHJlbGVhc2UvZ2VvaXAuZGF0IiwKICAgICJHZW9zaXRldXJsIjogImh0dHBzOi8vY2RuLmpzZGVsaXZyLm5ldC9naC9jb21tZW5zYWwvZG9tYWluLWxpc3QtY29tbXVuaXR5QHJlbGVhc2UvZ2Vvc2l0ZS5kYXQiLAogICAgIkdsb2JhbFByb3h5IjogImZhbHNlIiwKICAgICJMYXN0VXBkYXRlZCI6IDE3ODk2MzYyNzAsCiAgICAiTmFtZSI6ICJMaWdodCBQcm9maWxlIiwKICAgICJQcm94eUlwIjogWwogICAgICAgICJnZW9pcDpjdXN0b20iLAogICAgICAgICJnZW9pcDp0ZWxlZ3JhbSIsCiAgICAgICAgImdlb2lwOnR3aXR0ZXIiLAogICAgICAgICJnZW9pcDptZXRhIiwKICAgICAgICAiZ2VvaXA6ZGlzY29yZCIsCiAgICAgICAgImdlb2lwOmNsb3VkZnJvbnQiLAogICAgICAgICJnZW9pcDpjbG91ZGZsYXJlIiwKICAgICAgICAiZ2VvaXA6ZGlnaXRhbG9jZWFuIiwKICAgICAgICAiZ2VvaXA6aGV0em5lciIsCiAgICAgICAgImdlb2lwOm92aCIsCiAgICAgICAgImdlb2lwOnJvYmxveCIsCiAgICAgICAgImdlb2lwOmdvb2dsZS1tZWV0IgogICAgXSwKICAgICJQcm94eVNpdGVzIjogWwogICAgICAgICJnZW9zaXRlOkNVU1RPTSIsCiAgICAgICAgImdlb3NpdGU6VEVMRUdSQU0iLAogICAgICAgICJnZW9zaXRlOk1FVEEiLAogICAgICAgICJnZW9zaXRlOllPVVRVQkUiLAogICAgICAgICJnZW9zaXRlOkRJU0NPUkQiLAogICAgICAgICJnZW9zaXRlOlRXSVRURVIiLAogICAgICAgICJnZW9zaXRlOlRJS1RPSyIsCiAgICAgICAgImdlb3NpdGU6Uk9CTE9YIiwKICAgICAgICAiZ2Vvc2l0ZTpHT09HTEUtUExBWSIsCiAgICAgICAgImdlb3NpdGU6R09PR0xFLU1FRVQiLAogICAgICAgICJnZW9zaXRlOkdPT0dMRS1BSSIsCiAgICAgICAgImdlb3NpdGU6Q0xPVURGTEFSRSIsCiAgICAgICAgImdlb3NpdGU6Q0xPVURGUk9OVCIsCiAgICAgICAgImdlb3NpdGU6RElHSVRBTE9DRUFOIiwKICAgICAgICAiZ2Vvc2l0ZTpIRVRaTkVSIiwKICAgICAgICAiZ2Vvc2l0ZTpPVkgiLAogICAgICAgICJnZW9zaXRlOkhEUkVaS0EiLAogICAgICAgICJnZW9zaXRlOkhPRENBIiwKICAgICAgICAiZ2Vvc2l0ZTpORVdTIiwKICAgICAgICAiZ2Vvc2l0ZTpQT1JOIiwKICAgICAgICAiZ2Vvc2l0ZTpBTklNRSIKICAgIF0sCiAgICAiUmVtb3RlRE5TRG9tYWluIjogImh0dHBzOi8vZXUuZ2VvaGlkZS5ydS9kbnMtcXVlcnkiLAogICAgIlJlbW90ZUROU0lQIjogIjIxNy42MC4yNDUuMjE5IiwKICAgICJSZW1vdGVETlNUeXBlIjogIkRvSCIsCiAgICAiUm91dGVPcmRlciI6ICJibG9jay1wcm94eS1kaXJlY3QiCn0=
+```
+
+* **Для приложения Incy:**
+```text
+incy://routing/add/ewogICAgIkJsb2NrSXAiOiBbXSwKICAgICJCbG9ja1NpdGVzIjogWwogICAgICAgICJhcHBjZW50ZXIubXMiLAogICAgICAgICJmaXJlYmFzZS5pbyIsCiAgICAgICAgImNyYXNobHl0aWNzLmNvbSIKICAgIF0sCiAgICAiRGlyZWN0SXAiOiBbCiAgICAgICAgIjEwLjAuMC4wLzgiLAogICAgICAgICIxNzIuMTYuMC4wLzEyIiwKICAgICAgICAiMTkyLjE2OC4wLjAvMTYiLAogICAgICAgICIxNjkuMjU0LjAuMC8xNiIsCiAgICAgICAgIjIyNC4wLjAuMC80IiwKICAgICAgICAiMjU1LjI1NS4yNTUuMjU1IgogICAgXSwKICAgICJEaXJlY3RTaXRlcyI6IFtdLAogICAgIkRuc0hvc3RzIjogewogICAgICAgICJjbG91ZGZsYXJlLWRucy5jb20iOiAiMS4xLjEuMSIsCiAgICAgICAgImRucy5nb29nbGUiOiAiOC44LjguOCIKICAgIH0sCiAgICAiRG9tYWluU3RyYXRlZ3kiOiAiSVBJZk5vbk1hdGNoIiwKICAgICJEb21lc3RpY0ROU0RvbWFpbiI6ICJodHRwczovL2dlb2hpZGUucnUvZG5zLXF1ZXJ5IiwKICAgICJEb21lc3RpY0ROU0lQIjogIjQ1LjE1NS4yMDQuMTkwIiwKICAgICJEb21lc3RpY0ROU1R5cGUiOiAiRG9IIiwKICAgICJGYWtlRE5TIjogInRydWUiLAogICAgIkdlb2lwdXJsIjogImh0dHBzOi8vY2RuLmpzZGVsaXZyLm5ldC9naC9jb21tZW5zYWwvZG9tYWluLWxpc3QtY29tbXVuaXR5QHJlbGVhc2UvZ2VvaXAuZGF0IiwKICAgICJHZW9zaXRldXJsIjogImh0dHBzOi8vY2RuLmpzZGVsaXZyLm5ldC9naC9jb21tZW5zYWwvZG9tYWluLWxpc3QtY29tbXVuaXR5QHJlbGVhc2UvZ2Vvc2l0ZS5kYXQiLAogICAgIkdsb2JhbFByb3h5IjogImZhbHNlIiwKICAgICJMYXN0VXBkYXRlZCI6IDE3ODk2MzYyNzAsCiAgICAiTmFtZSI6ICJMaWdodCBQcm9maWxlIiwKICAgICJQcm94eUlwIjogWwogICAgICAgICJnZW9pcDpjdXN0b20iLAogICAgICAgICJnZW9pcDp0ZWxlZ3JhbSIsCiAgICAgICAgImdlb2lwOnR3aXR0ZXIiLAogICAgICAgICJnZW9pcDptZXRhIiwKICAgICAgICAiZ2VvaXA6ZGlzY29yZCIsCiAgICAgICAgImdlb2lwOmNsb3VkZnJvbnQiLAogICAgICAgICJnZW9pcDpjbG91ZGZsYXJlIiwKICAgICAgICAiZ2VvaXA6ZGlnaXRhbG9jZWFuIiwKICAgICAgICAiZ2VvaXA6aGV0em5lciIsCiAgICAgICAgImdlb2lwOm92aCIsCiAgICAgICAgImdlb2lwOnJvYmxveCIsCiAgICAgICAgImdlb2lwOmdvb2dsZS1tZWV0IgogICAgXSwKICAgICJQcm94eVNpdGVzIjogWwogICAgICAgICJnZW9zaXRlOkNVU1RPTSIsCiAgICAgICAgImdlb3NpdGU6VEVMRUdSQU0iLAogICAgICAgICJnZW9zaXRlOk1FVEEiLAogICAgICAgICJnZW9zaXRlOllPVVRVQkUiLAogICAgICAgICJnZW9zaXRlOkRJU0NPUkQiLAogICAgICAgICJnZW9zaXRlOlRXSVRURVIiLAogICAgICAgICJnZW9zaXRlOlRJS1RPSyIsCiAgICAgICAgImdlb3NpdGU6Uk9CTE9YIiwKICAgICAgICAiZ2Vvc2l0ZTpHT09HTEUtUExBWSIsCiAgICAgICAgImdlb3NpdGU6R09PR0xFLU1FRVQiLAogICAgICAgICJnZW9zaXRlOkdPT0dMRS1BSSIsCiAgICAgICAgImdlb3NpdGU6Q0xPVURGTEFSRSIsCiAgICAgICAgImdlb3NpdGU6Q0xPVURGUk9OVCIsCiAgICAgICAgImdlb3NpdGU6RElHSVRBTE9DRUFOIiwKICAgICAgICAiZ2Vvc2l0ZTpIRVRaTkVSIiwKICAgICAgICAiZ2Vvc2l0ZTpPVkgiLAogICAgICAgICJnZW9zaXRlOkhEUkVaS0EiLAogICAgICAgICJnZW9zaXRlOkhPRENBIiwKICAgICAgICAiZ2Vvc2l0ZTpORVdTIiwKICAgICAgICAiZ2Vvc2l0ZTpQT1JOIiwKICAgICAgICAiZ2Vvc2l0ZTpBTklNRSIKICAgIF0sCiAgICAiUmVtb3RlRE5TRG9tYWluIjogImh0dHBzOi8vZXUuZ2VvaGlkZS5ydS9kbnMtcXVlcnkiLAogICAgIlJlbW90ZUROU0lQIjogIjIxNy42MC4yNDUuMjE5IiwKICAgICJSZW1vdGVETlNUeXBlIjogIkRvSCIsCiAgICAiUm91dGVPcmRlciI6ICJibG9jay1wcm94eS1kaXJlY3QiCn0=
+```
+
+#### 🔥 2. Полный профиль (Со всеми категориями)
+Включает **абсолютно всё** из Легкого профиля, а также гигантские базы `RU-BLOCK` и `GEOBLOCK`.
 
 * **Для приложения Happ:**
 ```text
@@ -68,7 +83,7 @@ incy://routing/add/ewogICAgIkJsb2NrSXAiOiBbXSwKICAgICJCbG9ja1NpdGVzIjogWwogICAgI
 * **`RemoteDNSDomain`**: `https://eu.geohide.ru/dns-query` (IP: `217.60.245.219`, тип `DoH`)
 Европейская нода GeoHide используется для разрешения доменов, которые направляются в прокси. Она гарантирует:
 - Полное шифрование DNS-запросов через HTTPS (DoH).
-- Защиту от прослушивания и подмены DNS со стороны местного интернет-провайдера (Anti-DNS Poisoning).
+- Защиту от calculations и подмены DNS со стороны местного интернет-провайдера (Anti-DNS Poisoning).
 - Отсутствие утечек реального DNS (No DNS Leaks).
 
 ### ⚡ FakeDNS (`"FakeDNS": "true"`)
