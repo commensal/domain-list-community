@@ -54,3 +54,13 @@ mi-cloud.com
 mico.mi.com
 xiaomi.net
 sec.mi.com
+
+#GITHUB
+github.com
+githubusercontent.com
+githubassets.com
+github.io
+githubapp.com
+github.dev
+github.ai
+githubstatus.com
