@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Импорт правил маршрутизации Happ / Incy</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 32px 24px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    }
+    .icon { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 22px; font-weight: 700; color: #58a6ff; margin-bottom: 8px; }
+    p { font-size: 14px; color: #8b949e; line-height: 1.5; margin-bottom: 24px; }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 16px;
+      margin-bottom: 14px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      color: #ffffff;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-happ { background: linear-gradient(135deg, #238636, #2ea043); }
+    .btn-incy { background: linear-gradient(135deg, #1f6feb, #388bfd); }
+    .btn-secondary {
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      font-size: 14px;
+      padding: 12px;
+      cursor: pointer;
+    }
+    .footer {
+      margin-top: 24px;
+      font-size: 12px;
+      color: #6e7681;
+    }
+    .footer a { color: #58a6ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">⚡</div>
+    <h1>Маршрутизация GeoSite / GeoIP</h1>
+    <p>Нажмите на кнопку вашего приложения, чтобы автоматически добавить профиль со всеми категориями и Smart DNS:</p>
+
+    <a id="happ-btn" class="btn btn-happ" href="#">
+      📲 Добавить в Happ
+    </a>
+
+    <a id="incy-btn" class="btn btn-incy" href="#">
+      📲 Добавить в Incy
+    </a>
+
+    <button id="copy-btn" class="btn btn-secondary" onclick="copyConfig()">
+      📋 Скопировать ссылку Happ
+    </button>
+
+    <div class="footer">
+      Репозиторий: <a href="https://github.com/commensal/domain-list-community">commensal/domain-list-community</a>
+    </div>
+  </div>
+
+  <script>
+    const fullB64 = "ewogICAgIkJsb2NrSXAiOiBbXSwKICAgICJCbG9ja1NpdGVzIjogWwogICAgICAgICJhcHBjZW50ZXIubXMiLAogICAgICAgICJmaXJlYmFzZS5pbyIsCiAgICAgICAgImNyYXNobHl0aWNzLmNvbSIKICAgIF0sCiAgICAiRGlyZWN0SXAiOiBbCiAgICAgICAgIjEwLjAuMC4wLzgiLAogICAgICAgICIxNzIuMTYuMC4wLzEyIiwKICAgICAgICAiMTkyLjE2OC4wLjAvMTYiLAogICAgICAgICIxNjkuMjU0LjAuMC8xNiIsCiAgICAgICAgIjIyNC4wLjAuMC80IiwKICAgICAgICAiMjU1LjI1NS4yNTUuMjU1IgogICAgXSwKICAgICJEaXJlY3RTaXRlcyI6IFtdLAogICAgIkRuc0hvc3RzIjogewogICAgICAgICJjbG91ZGZsYXJlLWRucy5jb20iOiAiMS4xLjEuMSIsCiAgICAgICAgImRucy5nb29nbGUiOiAiOC44LjguOCIKICAgIH0sCiAgICAiRG9tYWluU3RyYXRlZ3kiOiAiSVBJZk5vbk1hdGNoIiwKICAgICJEb21lc3RpY0ROU0RvbWFpbiI6ICJodHRwczovL2dlb2hpZGUucnUvZG5zLXF1ZXJ5IiwKICAgICJEb21lc3RpY0ROU0lQIjogIjQ1LjE1NS4yMDQuMTkwIiwKICAgICJEb21lc3RpY0ROU1R5cGUiOiAiRG9IIiwKICAgICJGYWtlRE5TIjogInRydWUiLAogICAgIkdlb2lwdXJsIjogImh0dHBzOi8vY2RuLmpzZGVsaXZyLm5ldC9naC9jb21tZW5zYWwvZG9tYWluLWxpc3QtY29tbXVuaXR5QHJlbGVhc2UvZ2VvaXAuZGF0IiwKICAgICJHZW9zaXRldXJsIjogImh0dHBzOi8vY2RuLmpzZGVsaXZyLm5ldC9naC9jb21tZW5zYWwvZG9tYWluLWxpc3QtY29tbXVuaXR5QHJlbGVhc2UvZ2Vvc2l0ZS5kYXQiLAogICAgIkdsb2JhbFByb3h5IjogImZhbHNlIiwKICAgICJMYXN0VXBkYXRlZCI6IDE3ODgzMzcyNjIsCiAgICAiTmFtZSI6ICJCbGFjayBMaXN0IChGdWxsKSIsCiAgICAiUHJveHlJcCI6IFsKICAgICAgICAiZ2VvaXA6Y3VzdG9tIiwKICAgICAgICAiZ2VvaXA6dGVsZWdyYW0iLAogICAgICAgICJnZW9pcDp0d2l0dGVyIiwKICAgICAgICAiZ2VvaXA6bWV0YSIsCiAgICAgICAgImdlb3NpdGU6ZGlzY29yZCIsCiAgICAgICAgImdlb2lwOmNsb3VkZnJvbnQiLAogICAgICAgICJnZW9pcDpjbG91ZGZsYXJlIiwKICAgICAgICAiZ2VvaXA6ZGlnaXRhbG9jZWFuIiwKICAgICAgICAiZ2VvaXA6aGV0em5lciIsCiAgICAgICAgImdlb3NpdGU6b3ZoIiwKICAgICAgICAiZ2VvaXA6cm9ibG94IiwKICAgICAgICAiZ2VvaXA6Z29vZ2xlLW1lZXQiCiAgICBdLAogICAgIlByb3h5U2l0ZXMiOiBbCiAgICAgICAgImdlb3NpdGU6Q1VTVE9NIiwKICAgICAgICAiZ2Vvc2l0ZTpSVS1CTE9DSyIsCiAgICAgICAgImdlb3NpdGU6R0VPQkxPQ0siLAogICAgICAgICJnZW9zaXRlOlRFTEVHUkFNIiwKICAgICAgICAiZ2Vvc2l0ZTpNRVRBIiwKICAgICAgICAiZ2Vvc2l0ZTpZT1VUVUJFIiwKICAgICAgICAiZ2Vvc2l0ZTpESVNDT1JEIiwKICAgICAgICAiZ2Vvc2l0ZTpUV0lUVEVSIiwKICAgICAgICAiZ2Vvc2l0ZTpUSUtUT0siLAogICAgICAgICJnZW9zaXRlOlJPQkxPWCIsCiAgICAgICAgImdlb3NpdGU6R09PR0xFLVBMQVkiLAogICAgICAgICJnZW9zaXRlOkdPT0dMRS1NRUVUIiwKICAgICAgICAiZ2Vvc2l0ZTpHT09HTEUtQUkiLAogICAgICAgICJnZW9zaXRlOkNMT1VERkxBUkUiLAogICAgICAgICJnZW9zaXRlOkNMT1VERFJPTlQiLAogICAgICAgICJnZW9zaXRlOkRJR0lUQUxPQ0VBTiIsCiAgICAgICAgImdlb3NpdGU6SEVUWk5FUiIsCiAgICAgICAgImdlb3NpdGU6T1ZIIiwKICAgICAgICAiZ2Vvc2l0ZTpIRFJFWktBIiwKICAgICAgICAiZ2Vvc2l0ZTpIT0RDQSIsCiAgICAgICAgImdlb3NpdGU6TkVXUyIsCiAgICAgICAgImdlb3NpdGU6UE9STiIsCiAgICAgICAgImdlb3NpdGU6QU5JTUUiCiAgICBdLAogICAgIlJlbW90ZUROU0RvbWFpbiI6ICJodHRwczovL2V1Lmdlb2hpZGUucnUvZG5zLXF1ZXJ5IiwKICAgICJSZW1vdGVETlNUeXBlIjogIkRvSCIsCiAgICAiUmVtb3RlRE5TSVAiOiAiMjE3LjYwLjI0NS4yMTkiLAogICAgIlJvdXRlT3JkZXIiOiAiYmxvY2stcHJveHktZGlyZWN0Igp9";
+
+    const happUrl = "happ://routing/add/" + fullB64;
+    const incyUrl = "incy://routing/add/" + fullB64;
+
+    document.getElementById("happ-btn").href = happUrl;
+    document.getElementById("incy-btn").href = incyUrl;
+
+    function copyConfig() {
+      navigator.clipboard.writeText(happUrl).then(() => {
+        const btn = document.getElementById("copy-btn");
+        btn.innerText = "✅ Скопировано!";
+        setTimeout(() => { btn.innerText = "📋 Скопировать ссылку Happ"; }, 2000);
+      });
+    }
+
+    // Auto-redirect if URL param present (?app=happ or ?app=incy)
+    const urlParams = new URLSearchParams(window.location.search);
+    const app = urlParams.get('app');
+    if (app === 'happ') {
+      window.location.href = happUrl;
+    } else if (app === 'incy') {
+      window.location.href = incyUrl;
+    }
+  </script>
+</body>
+</html>
