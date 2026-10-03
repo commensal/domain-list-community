@@ -21,11 +21,13 @@ brawlstarsgame.com
 brawlstars.com
 
 #OTHER
-2ip.ru
+2ip.io
 4pda.to
 4pda.ws
 gitbook.io
 clerk.com
+albinart.com
+cabrents.com
 flibusta.net
 flibusta.is
 newtis.info
