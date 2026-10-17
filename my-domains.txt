@@ -33,6 +33,8 @@ flibusta.is
 newtis.info
 mijia.tech
 xda-developers.com
+dns-ai.ru
+eu.geohide.ru
 
 #ADULT
 phncdn.com
