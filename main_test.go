@@ -20,7 +20,7 @@ func TestParseEntry(t *testing.T) {
 		{name: "domain", typ: "domain", rule: "Example.COM", wantPlain: "domain:example.com"},
 		{name: "sorted attrs", typ: "full", rule: "a.example.com @cn @ads", wantPlain: "full:a.example.com:@ads,@cn"},
 		{name: "duplicated attrs", typ: "domain", rule: "example.com @ads @ads", wantPlain: "domain:example.com:@ads"},
-		{name: "affiliations", typ: "domain", rule: "example.com &other @ads", wantPlain: "domain:example.com:@ads", wantAffs: []string{"OTHER"}},
+		{name: "affiliations", typ: "domain", rule: "example.com &other @ads", wantPlain: "domain:example.com:@ads", wantAffs: []string{"other"}},
 		{name: "regexp", typ: "regexp", rule: `^example\.com$`, wantPlain: `regexp:^example\.com$`},
 		{name: "tld", typ: "domain", rule: "google", wantPlain: "domain:google"},
 		{name: "hyphen inside", typ: "domain", rule: "my-example.com", wantPlain: "domain:my-example.com"},
@@ -75,8 +75,8 @@ func TestParseInclusion(t *testing.T) {
 		wantBan  []string
 		wantErr  bool
 	}{
-		{name: "plain", rule: "other-list", wantSrc: "OTHER-LIST"},
-		{name: "filters", rule: "other @ads @-cn", wantSrc: "OTHER", wantMust: []string{"ads"}, wantBan: []string{"cn"}},
+		{name: "plain", rule: "other-list", wantSrc: "other-list"},
+		{name: "filters", rule: "other @ads @-cn", wantSrc: "other", wantMust: []string{"ads"}, wantBan: []string{"cn"}},
 		{name: "empty attr", rule: "other @", wantErr: true},
 		{name: "empty ban attr", rule: "other @-", wantErr: true},
 		{name: "empty rule", rule: " ", wantErr: true},
@@ -155,20 +155,20 @@ func TestResolveSelectiveInclusion(t *testing.T) {
 
 	processor := &Processor{parsedListByName: make(map[string]*ParsedList)}
 	for name := range files {
-		if err := processor.loadData(strings.ToUpper(name), filepath.Join(dataPath, name)); err != nil {
+		if err := processor.loadData(name, filepath.Join(dataPath, name)); err != nil {
 			t.Fatalf("loadData(%q) got unexpected error: %v", name, err)
 		}
 	}
 	for name := range files {
-		if _, err := processor.resolveList(strings.ToUpper(name)); err != nil {
+		if _, err := processor.resolveList(name); err != nil {
 			t.Fatalf("resolveList(%q) got unexpected error: %v", name, err)
 		}
 	}
 
-	assertList(t, processor, "SOURCE", []string{"domain:example.com:@cn", "domain:example.org:@ads"})
-	assertList(t, processor, "FULL", []string{"domain:example.com:@cn", "domain:example.org:@ads"})
-	assertList(t, processor, "MUST", []string{"domain:example.org:@ads"})
-	assertList(t, processor, "BANNED", []string{"domain:example.org:@ads", "domain:sub.example.com", "full:mail.example.com"})
+	assertList(t, processor, "source", []string{"domain:example.com:@cn", "domain:example.org:@ads"})
+	assertList(t, processor, "full", []string{"domain:example.com:@cn", "domain:example.org:@ads"})
+	assertList(t, processor, "must", []string{"domain:example.org:@ads"})
+	assertList(t, processor, "banned", []string{"domain:example.org:@ads", "domain:sub.example.com", "full:mail.example.com"})
 }
 
 func TestResolveCircularInclusion(t *testing.T) {
@@ -184,12 +184,12 @@ func TestResolveCircularInclusion(t *testing.T) {
 	}
 	processor := &Processor{parsedListByName: make(map[string]*ParsedList)}
 	for name := range files {
-		if err := processor.loadData(strings.ToUpper(name), filepath.Join(dataPath, name)); err != nil {
+		if err := processor.loadData(name, filepath.Join(dataPath, name)); err != nil {
 			t.Fatalf("loadData(%q) got unexpected error: %v", name, err)
 		}
 	}
-	if _, err := processor.resolveList("FIRST"); err == nil {
-		t.Fatal("resolveList(\"FIRST\") = nil, want circular inclusion error")
+	if _, err := processor.resolveList("first"); err == nil {
+		t.Fatal("resolveList(\"first\") = nil, want circular inclusion error")
 	}
 }
 

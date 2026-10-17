@@ -135,7 +135,7 @@ func (gs *GeoSites) assembleDat(task DatTask) error {
 	case ModeAllowlist:
 		allowedIdxes := make([]int, 0, len(task.Lists))
 		for _, list := range task.Lists {
-			if idx, ok := gs.SiteIdx[strings.ToUpper(list)]; ok {
+			if idx, ok := gs.SiteIdx[strings.ToLower(list)]; ok {
 				allowedIdxes = append(allowedIdxes, idx)
 			} else {
 				return fmt.Errorf("list %q not found for allowlist task", list)
@@ -154,7 +154,7 @@ func (gs *GeoSites) assembleDat(task DatTask) error {
 	case ModeDenylist:
 		deniedMap := make(map[int]bool, len(task.Lists))
 		for _, list := range task.Lists {
-			if idx, ok := gs.SiteIdx[strings.ToUpper(list)]; ok {
+			if idx, ok := gs.SiteIdx[strings.ToLower(list)]; ok {
 				deniedMap[idx] = true
 			} else {
 				fmt.Printf("[Warn] list %q not found in denylist task %q\n", list, task.Name)
@@ -238,7 +238,7 @@ func parseEntry(typ, rule string) (*Entry, []string, error) {
 			entry.Attrs = append(entry.Attrs, attr)
 			plen += 2 + len(attr)
 		case '&':
-			aff := strings.ToUpper(part[1:])
+			aff := strings.ToLower(part[1:])
 			if !validateSiteName(aff) {
 				return entry, affs, fmt.Errorf("invalid affiliation: %q", aff)
 			}
@@ -274,7 +274,7 @@ func parseInclusion(rule string) (*Inclusion, error) {
 	if len(parts) == 0 {
 		return nil, fmt.Errorf("empty inclusion")
 	}
-	inc := &Inclusion{Source: strings.ToUpper(parts[0])}
+	inc := &Inclusion{Source: strings.ToLower(parts[0])}
 	if !validateSiteName(inc.Source) {
 		return inc, fmt.Errorf("invalid included list name: %q", inc.Source)
 	}
@@ -353,7 +353,7 @@ func validateSiteName(name string) bool {
 	}
 	for i := range name {
 		c := name[i]
-		if (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '!' || c == '-' {
+		if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '!' || c == '-' {
 			continue
 		}
 		return false
@@ -545,7 +545,7 @@ func run() error {
 		if d.IsDir() {
 			return nil
 		}
-		listName := strings.ToUpper(filepath.Base(path))
+		listName := strings.ToLower(filepath.Base(path))
 		if !validateSiteName(listName) {
 			return fmt.Errorf("invalid list name: %q", listName)
 		}
@@ -569,7 +569,7 @@ func run() error {
 	failedCount := 0
 	for rawEpList := range strings.SplitSeq(*exportLists, ",") {
 		if epList := strings.TrimSpace(rawEpList); epList != "" {
-			pl, exist := processor.parsedListByName[strings.ToUpper(epList)]
+			pl, exist := processor.parsedListByName[strings.ToLower(epList)]
 			if !exist || len(pl.FinalEntries) == 0 {
 				fmt.Printf("[Warn] list %q does not exist or is empty\n", epList)
 				continue

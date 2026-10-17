@@ -4,58 +4,46 @@ on:
     branches:
       - master
 jobs:
-  build:
-    name: Build
+  test:
+    name: Test compiler
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout PR base
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
-          path: base
-
       - name: Checkout PR head
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          path: test
 
       - name: Setup Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@v5
         with:
-          go-version-file: test/go.mod
-          cache-dependency-path: test/go.sum
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
 
-      - name: Build .dat and .yml
+      - name: Run compiler tests
+        run: go test ./...
+
+      - name: Build a sample dat and check category case
         run: |
-          [ -d ./base/data/ ] && [ -d ./test/data/ ] || exit 1
-          mv ./base/data/ ./test/basedata/
-          rm -rf ./base
-          cd test || exit 1
-          # Base files
-          go run ./main.go --datapath=./basedata --outputdir=../
-          go run ./cmd/datdump/main.go --inputdata=../dlc.dat --outputdir=../ --exportlists=_all_
-          rm -f ../dlc.dat
-          mv ../dlc.dat_plain.yml ../BASE-${{ github.run_number }}-dlc.yml
-          # Head files
-          go run ./main.go --datapath=./data --outputdir=../
-          go run ./cmd/datdump/main.go --inputdata=../dlc.dat --outputdir=../ --exportlists=_all_
-          mv ../dlc.dat ../TEST-${{ github.run_number }}-dlc.dat
-          mv ../dlc.dat_plain.yml ../TEST-${{ github.run_number }}-dlc.yml
-          cd ../ && rm -rf ./test
-
-      - name: Print plain diff
-        run: |
-          echo "Base: ${{ github.event.pull_request.base.sha }}"
-          echo "Head: ${{ github.event.pull_request.head.sha }}"
-          diff -us BASE-${{ github.run_number }}-dlc.yml TEST-${{ github.run_number }}-dlc.yml | tee TEST-${{ github.run_number }}-dlc.diff
-          rm -f BASE-${{ github.run_number }}-dlc.yml TEST-${{ github.run_number }}-dlc.yml
-
-      - name: Upload TEST-${{ github.run_number }} files
-        uses: actions/upload-artifact@v7
-        with:
-          name: TEST-${{ github.run_number }}
-          path: |
-            TEST-${{ github.run_number }}-dlc.dat
-            TEST-${{ github.run_number }}-dlc.diff
+          mkdir -p data
+          printf 'example.com\n' > data/custom
+          printf 'include:custom\n' > data/sample
+          go run . --datapath=./data --outputdir=./ --outputname=sample.dat
+          python3 - << 'PY'
+          from pathlib import Path
+          blob = Path("sample.dat").read_bytes()
+          codes = []
+          start = 0
+          mark = b"\n\x12"
+          while True:
+              i = blob.find(mark, start)
+              if i < 0:
+                  break
+              i += 1
+              length = blob[i + 1]
+              codes.append(blob[i + 2:i + 2 + length].decode())
+              start = i + 2 + length
+          if codes != ["custom", "sample"]:
+              raise SystemExit(f"expected lowercase category codes, got {codes}")
+          print("category codes:", ", ".join(codes))
+          PY

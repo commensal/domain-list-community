@@ -36,7 +36,7 @@ func loadGeosite(path string) (*GeoSites, error) {
 	gs := &GeoSites{Sites: vgeositeList.Entry}
 	gs.SiteIdx = make(map[string]int, len(gs.Sites))
 	for i, site := range gs.Sites {
-		gs.SiteIdx[strings.ToUpper(site.CountryCode)] = i
+		gs.SiteIdx[strings.ToLower(site.CountryCode)] = i
 	}
 	return gs, nil
 }
@@ -69,7 +69,7 @@ func domain2Builder(d *router.Domain, b *strings.Builder) error {
 }
 
 func exportSite(name string, gs *GeoSites) error {
-	idx, ok := gs.SiteIdx[strings.ToUpper(name)]
+	idx, ok := gs.SiteIdx[strings.ToLower(name)]
 	if !ok {
 		return fmt.Errorf("list %q does not exist", name)
 	}

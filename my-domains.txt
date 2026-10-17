@@ -31,6 +31,8 @@ cabrents.com
 flibusta.net
 flibusta.is
 newtis.info
+dns-ai.ru
+eu.geohide.ru
 mijia.tech
 xda-developers.com
 dns-ai.ru

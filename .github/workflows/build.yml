@@ -8,11 +8,14 @@ on:
     paths-ignore:
       - "**/README.md"
   schedule:
-    - cron: "0 2 * * *" 
+    - cron: "0 2 * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -25,167 +28,95 @@ jobs:
         with:
           ref: ${{ github.sha }}
           path: code
+          fetch-depth: 1
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: 'stable'
-
-      - name: Set variables
-        run: |
-          echo "RELEASE_NAME=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
-          echo "TAG_NAME=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
-        shell: bash
+          go-version: stable
 
       - name: Clone itdoginfo/allow-domains
-        run: |
-          git clone https://github.com/itdoginfo/allow-domains.git itdog-domains
+        run: git clone --depth 1 https://github.com/itdoginfo/allow-domains.git itdog-domains
 
-      - name: Download custom lists (geosite)
+      - name: Fetch previous geo files
         run: |
-          mkdir -p code/data
-          cd code/data
-          rm -rf *
-          
-          # Обрабатываем Categories
-          for f in ../../itdog-domains/Categories/*.lst; do
-              [ -e "$f" ] || continue
-              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]' | tr '_' '-')
-              if [ "$name" == "block" ]; then name="ru-block"; fi
-              cat "$f" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." >> "$name" || true
-          done
-          
-          # Обрабатываем Services
-          for f in ../../itdog-domains/Services/*.lst; do
-              [ -e "$f" ] || continue
-              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]' | tr '_' '-')
-              cat "$f" | sed 's/^domain://g' | grep -v "^#" | grep -v "^\." >> "$name" || true
-          done
-          
-          # Добавляем хардкод (на всякий случай, чтобы не потерять то, что было)
-          echo "" >> meta
-          echo -e "facebook.com\ninstagram.com\nfbcdn.net\nmeta.com\nthreads.net" >> meta
-          echo "" >> telegram
-          echo -e "telegram.org\ntelegram.me\nt.me\ntdesktop.org" >> telegram
-          echo "" >> youtube
-          echo -e "youtube.com\nyoutu.be\ngooglevideo.com\nytimg.com\nggpht.com" >> youtube
-          
-          # Читаем твой личный список доменов из корня репозитория (если он существует)
-          if [ -f "../../code/my-domains.txt" ]; then
-            cat ../../code/my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' >> custom || true
-          elif [ -f "../../my-domains.txt" ]; then
-            cat ../../my-domains.txt | grep -v "^#" | grep -v "^package:" | sed 's/^domain://g' >> custom || true
-          fi
-          
-          # Убираем дубликаты, пустые строки и Windows переносы (\r) во всех сгенерированных списках
-          for f in *; do
-              if [ -f "$f" ]; then
-                  tr -d '\r' < "$f" | sort -u | sed '/^$/d' > "$f.tmp"
-                  mv "$f.tmp" "$f"
-              fi
-          done
-          
-          if [ ! -s custom ]; then
-            echo "example.com" > custom
-          fi
+          git fetch --depth 1 origin release || true
+          git show origin/release:geosite.dat > previous-geosite.dat 2>/dev/null || true
+          git show origin/release:geoip.dat > previous-geoip.dat 2>/dev/null || true
+
+      - name: Prepare category lists
+        run: bash code/.github/scripts/prepare-lists.sh code itdog-domains
 
       - name: Build geosite.dat
+        working-directory: code
         run: |
-          cd code || exit 1
-          go run ./ --outputdir=../
-          cd ../
-          mv dlc.dat geosite.dat
+          go run ./ --outputdir=../ --outputname=geosite.dat
+          test -s ../geosite.dat
 
       - name: Build geoip.dat
         run: |
-          mkdir -p geoip-build/geoip-source
-          cd geoip-build
-          
-          # Обрабатываем IPv4 подсети
-          for f in ../itdog-domains/Subnets/IPv4/*.lst; do
-              [ -e "$f" ] || continue
-              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]' | tr '_' '-')
-              cat "$f" | grep -v "^#" >> geoip-source/${name}.txt || true
-          done
-          
-          # Обрабатываем IPv6 подсети
-          for f in ../itdog-domains/Subnets/IPv6/*.lst; do
-              [ -e "$f" ] || continue
-              name=$(basename "$f" .lst | tr '[:upper:]' '[:lower:]' | tr '_' '-')
-              cat "$f" | grep -v "^#" >> geoip-source/${name}.txt || true
-          done
-          
-          # Читаем твой личный список IP (если он есть)
-          if [ -f "../code/my-ips.txt" ]; then
-            cat ../code/my-ips.txt | grep -v "^#" >> geoip-source/custom.txt || true
-          elif [ -f "../my-ips.txt" ]; then
-            cat ../my-ips.txt | grep -v "^#" >> geoip-source/custom.txt || true
-          fi
-          
-          # Убираем дубликаты, пустые строки и \r, добавляем фейковый IP для пустых файлов
-          for f in geoip-source/*.txt; do
-              [ -e "$f" ] || continue
-              tr -d '\r' < "$f" | sort -u | sed '/^$/d' > "$f.tmp"
-              if [ ! -s "$f.tmp" ]; then
-                  echo "127.0.0.1/32" > "$f.tmp"
-              fi
-              mv "$f.tmp" "$f"
-          done
-          
-          # Конфиг для генерации
-          cat << 'EOF' > config.json
-          {
-            "input": [
-              {
-                "type": "text",
-                "action": "add",
-                "args": {
-                  "inputDir": "./geoip-source"
-                }
-              }
-            ],
-            "output": [
-              {
-                "type": "v2rayGeoIPDat",
-                "action": "output",
-                "args": {
-                  "outputDir": "../",
-                  "outputName": "geoip.dat"
-                }
-              }
-            ]
-          }
-          EOF
-          
-          # Запускаем компиляцию через v2fly/geoip
-          go run github.com/v2fly/geoip@latest -c config.json
-          
-          cd ../
-          rm -rf geoip-build itdog-domains
+          # v2fly/geoip stores every list name in uppercase and cannot be told
+          # otherwise. Xray compares the stored bytes after uppercasing the rule,
+          # so the packer below keeps the filename case.
+          python3 code/.github/scripts/pack-geoip.py code/geoip-source geoip.dat
+          test -s geoip.dat
+
+      - name: Verify profile categories exist
+        run: python3 code/.github/scripts/verify-dat.py geosite.dat geoip.dat code
+
+      - name: Update routing profiles when geo files changed
+        run: |
+          bash code/.github/scripts/update-routing.sh code previous-geosite.dat previous-geoip.dat \
+            | tee routing.env
+          grep -E '^(geo_changed|last_updated)=' routing.env >> "$GITHUB_ENV"
+
+      - name: Commit refreshed deeplinks
+        if: env.geo_changed == 'true'
+        working-directory: code
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add HAPP INCY index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Refresh routing LastUpdated ${{ env.last_updated }}"
+          git push origin HEAD:master
 
       - name: Generate hashes and archives
         run: |
           sha256sum geosite.dat > geosite.dat.sha256sum
           zip -9 geosite.dat.zip geosite.dat
           sha256sum geosite.dat.zip > geosite.dat.zip.sha256sum
-          
           sha256sum geoip.dat > geoip.dat.sha256sum
           zip -9 geoip.dat.zip geoip.dat
           sha256sum geoip.dat.zip > geoip.dat.zip.sha256sum
 
-      - name: Git push assets to "release" branch
+      - name: Publish geo files to the release branch
+        if: env.geo_changed == 'true'
         run: |
-          git init
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git init release-publish
+          cd release-publish
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b release
+          cp ../geosite.dat ../geoip.dat ../geosite.dat.zip ../geoip.dat.zip ./*.sha256sum .
           git add geosite.dat geoip.dat *.zip *.sha256sum
-          git commit -m "${{ env.RELEASE_NAME }}"
-          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          git push -f -u origin release
+          git commit -m "Update geo files ${{ env.last_updated }}"
+          git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:release
 
-      - name: Release and upload assets
-        run: |
-          gh release create ${{ env.TAG_NAME }} --target ${{ github.sha }} --generate-notes --latest --title ${{ env.RELEASE_NAME }} ./geosite.dat ./geosite.dat.zip ./geoip.dat ./geoip.dat.zip ./*.sha256sum
+      - name: Publish the release
+        if: env.geo_changed == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="geo-${{ env.last_updated }}"
+          gh release delete "$tag" --cleanup-tag --yes || true
+          gh release create "$tag" \
+            --target "${{ github.sha }}" \
+            --latest \
+            --title "$tag" \
+            --notes "Geo files changed. Routing LastUpdated is ${{ env.last_updated }}." \
+            ./geosite.dat ./geosite.dat.zip ./geoip.dat ./geoip.dat.zip ./*.sha256sum
+
+      - name: Skip release
+        if: env.geo_changed != 'true'
+        run: echo "Geo files are unchanged. LastUpdated, the release branch and tags were left as they are."

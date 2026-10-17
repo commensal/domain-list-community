@@ -1,161 +1,72 @@
-# ⚡ Compact GeoSite & GeoIP for Happ / Incy (Xray & Sing-box)
+# Compact GeoSite & GeoIP for Happ / Incy
 
 [![Build & Release](https://github.com/commensal/domain-list-community/actions/workflows/build.yml/badge.svg)](https://github.com/commensal/domain-list-community/actions/workflows/build.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/commensal/domain-list-community?color=blue&label=Latest%20Release)](https://github.com/commensal/domain-list-community/releases/latest)
-[![Daily Update](https://img.shields.io/badge/Auto--Update-Daily%2002%3A00%20UTC-success)](https://github.com/commensal/domain-list-community/actions)
-[![Clients](https://img.shields.io/badge/Clients-Happ%20%7C%20Incy%20%7C%20Xray%20%7C%20Sing--box-orange)](https://github.com/commensal/domain-list-community)
 
-Оптимизированный генератор легковесных баз правил **`geosite.dat`** и **`geoip.dat`** для выборочной маршрутизации трафика (Split Tunneling). 
+Компактные `geosite.dat` и `geoip.dat` для раздельной маршрутизации в Happ, Incy, Xray и sing-box.
 
-Базы автоматически компилируются каждый день в **02:00 UTC** через GitHub Actions, очищаются от мусора, нормализуются и объединяются со списками сообщества **[itdoginfo/allow-domains](https://github.com/itdoginfo/allow-domains)** и вашими персональными правилами.
+Списки берутся из [itdoginfo/allow-domains](https://github.com/itdoginfo/allow-domains) и из `my-domains.txt` / `my-ips.txt`. Сборка запускается каждый день в 02:00 UTC, по пушу в `master` и вручную. Новый релиз и новое значение `LastUpdated` появляются только когда содержимое `geosite.dat` или `geoip.dat` изменилось: Happ скачивает геофайлы заново только в этом случае.
 
----
+## Установка
 
-## 🚀 Быстрая установка правил в 1 клик
+Откройте ссылку с телефона. Профиль добавится в приложение.
 
-Нажмите на ссылку ниже **с телефона** — профиль автоматически добавится в приложение.
-
-| Клиент | 📦 Дефолтный профиль (Рекомендуемый / Легкий) | 🔥 Полный профиль (Все категории + RU-BLOCK) |
+| Клиент | Default | Full |
 | :--- | :--- | :--- |
-| 🟢 **Happ** (iOS / Android) | [📲 **Добавить в Happ**](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/HAPP/DEFAULT.DEEPLINK) | [📲 **Добавить в Happ**](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/HAPP/FULL.DEEPLINK) |
-| 🔵 **Incy** (iOS / Android) | [📲 **Добавить в Incy**](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/INCY/DEFAULT.DEEPLINK) | [📲 **Добавить в Incy**](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/INCY/FULL.DEEPLINK) |
+| Happ | [Добавить Default](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/HAPP/DEFAULT.DEEPLINK) | [Добавить Full](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/HAPP/FULL.DEEPLINK) |
+| Incy | [Добавить Default](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/INCY/DEFAULT.DEEPLINK) | [Добавить Full](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/INCY/FULL.DEEPLINK) |
 
-> 💡 **В чем разница?** 
-> * **Дефолтный профиль (Рекомендуемый):** Включает только заблокированные зарубежные сервисы и исключает подсети хостингов (`cloudflare`, `cloudfront`, `digitalocean`, `hetzner`). Благодаря этому **Авиасейлс, Госуслуги и все российские банки (Сбер, Т-Банк и др.) работают напрямую** и не блокируются. Потребляет минимум памяти.
-> * **Полный профиль:** Дополнительно включает масштабные базы `RU-BLOCK` (весь реестр РКН) и `GEOBLOCK`.
+Страница с кнопками полного профиля: [index.html](index.html).
 
----
+Профиля три не существует. `LIGHT` был копией `DEFAULT` и удалён.
 
----
+### Что проксируется
 
-## 🧠 Архитектура DNS: как работают ИИ без прокси и почему именно GeoHide
+**Default** — заблокированные зарубежные сервисы, без подсетей хостингов:
 
-В этом профиле маршрутизации используется продуманная гибридная схема DNS, решающая одну из главных проблем пользователей современных VPN:
+`geosite:telegram`, `meta`, `custom`, `discord`, `porn`, `youtube`, `google-play`, `google-meet`, `hdrezka`, `news`, `roblox`, `tiktok`, `twitter`, `google-ai`, `geoblock`
 
-### ⚠️ Проблема: Google блокирует доступ к Gemini через VPS
-Большинство пользователей пускают весь трафик или заблокированные ресурсы через зарубежные VPS (Hetzner, DigitalOcean, OVH и др.). 
-Однако **Google активно отслеживает IP-адреса хостинг-провайдеров и дата-центров**. 
-При попытке войти в **Google Gemini**, **Google AI Studio** или пользоваться расширенным поиском через обычный VPS вы сталкиваетесь с ошибками:
-* `403 Forbidden` / `Location not supported`
-* Бесконечные проверки Cloudflare / Google ReCAPTCHA
-* Внезапные сбросы сессии
+`geoip:telegram`, `twitter`, `meta`, `discord`
 
-### ✅ Решение: Smart DoH через GeoHide (`DomesticDNSDomain`)
-В конфиге в качестве внутреннего DNS задан:
-* **`DomesticDNSDomain`**: `https://geohide.ru/dns-query` (IP: `45.155.204.190`, тип `DoH`)
+**Full** добавляет реестр блокировок, хостинги и оставшиеся категории:
 
-**GeoHide** работает как **Smart DNS**:
-1. Он не пускает тяжелый трафик через медленные туннели, а точечно модифицирует DNS-ответы для регионально заблокированных ИИ-сервисов (Google Gemini, ChatGPT/OpenAI, Claude/Anthropic).
-2. Запросы к этим сервисам идут **напрямую (Direct)** через чистые распределенные SNI-шлюзы.
-3. **Результат:** Gemini, ChatGPT и Claude работают **без прокси на максимальной скорости вашего интернет-провайдера**, а Google не видит «подозрительный» дата-центровый IP вашего сервера и не блокирует аккаунт!
+`geosite:ru-block`, `cloudflare`, `cloudfront`, `digitalocean`, `hetzner`, `ovh`, `hodca`, `anime`
 
-### 🛡 Внешний безопасный DoH (`RemoteDNSDomain`)
-* **`RemoteDNSDomain`**: `https://eu.geohide.ru/dns-query` (IP: `217.60.245.219`, тип `DoH`)
-Европейская нода GeoHide используется для разрешения доменов, которые направляются в прокси. Она гарантирует:
-- Полное шифрование DNS-запросов через HTTPS (DoH).
-- Защиту от прослушивания и подмены DNS со стороны местного интернет-провайдера (Anti-DNS Poisoning).
-- Отсутствие утечек реального DNS (No DNS Leaks).
+`geoip:roblox`, `google-meet`
 
-### ⚡ FakeDNS (`"FakeDNS": "true"`)
-* **Включен (`true`)**: Позволяет клиенту мгновенно отвечать на DNS-запросы фиктивными IP-адресами из пула `198.18.0.0/15`, сокращая задержку резолвинга до 0 мс (0 ms RTT) и предотвращая утечки DNS.
-* В современных клиентах (включая **Incy** на iOS и клиенты на Android) звонки и WebRTC работают штатно и без сбоев.
+Российские банки и Aviasales в Default идут напрямую, потому что их домены не входят в эти списки, а подсети Cloudflare, CloudFront, DigitalOcean, Hetzner и OVH подключены только в Full.
 
-### 📌 Bootstrap DNS (`DnsHosts`)
-```json
-"DnsHosts": {
-    "cloudflare-dns.com": "1.1.1.1",
-    "dns.google": "8.8.8.8"
-}
-```
-Статическая привязка IP-адресов исключает «замкнутый круг» (deadlock), когда для подключения к DoH-серверу клиенту сначала нужно было бы определить его IP через обычный незашифрованный DNS.
+Оба профиля блокируют `appcenter.ms`, `firebase.io`, `crashlytics.com` и `geosite:category-ads-all`. Последняя категория поставляется приложением, этот репозиторий её не собирает.
 
----
+## DNS
 
-## ⚙️ Параметры конфигурации профиля
+Оба профиля используют одинаковые DNS. FakeDNS включён: сервер перехватывает UDP/53, поэтому отдельный DoH-резолвер не нужен.
 
-Полный разбор параметров, настроенных в правиле:
+| Назначение | Тип | Адрес | IP |
+| :--- | :--- | :--- | :--- |
+| Remote DNS | DoU | `https://dns.dns-ai.ru/dns-query` | `8.8.8.8` |
+| Domestic DNS | DoU | `https://dns.google/dns-query` | `77.88.8.8` |
 
-| Параметр | Значение | Зачем это нужно |
-| :--- | :--- | :--- |
-| **`DomainStrategy`** | `IPIfNonMatch` | Умная проверка: сначала сверяются доменные списки (`geosite`). Если совпадений нет, домен резолвится в IP и проверяются IP-правила (`geoip`). Дает максимальное быстродействие. |
-| **`RouteOrder`** | `block-proxy-direct` | Порядок обработки: **1. Block** (реклама/слежка) ➔ **2. Proxy** (заблокированные сайты) ➔ **3. Direct** (весь остальной Рунет и обычные сайты). |
-| **`GlobalProxy`** | `false` | Выборочный режим (Split Tunneling). Трафик российских банков, Госуслуг и локальных сайтов идет напрямую и не ломается. |
-| **`FakeDNS`** | `true` | Мгновенный DNS-ответ из пула 198.18.0.0/15 (0 мс задержки) и защита от утечек. |
-| **`BlockSites`** | `appcenter.ms`, `firebase.io`, `crashlytics.com` | Блокировка мобильной телеметрии, трекеров и аналитики крашей. Экономит заряд батареи и трафик. |
-| **`DirectIp`** | `10.0.0.0/8`, `192.168.0.0/16`, `172.16.0.0/12`... | Исключение локальных сетей (RFC 1918). Доступ к роутеру, сетевым принтерам и умному дому всегда работает напрямую. |
-| **`ProxySites`** | Категории `geosite:*` | Список категорий доменов, направляемых в прокси. |
-| **`ProxyIp`** | Категории `geoip:*` | Список подсетей сервисов, трафик к которым отправляется через прокси. |
+Фиксированные соответствия: `cloudflare-dns.com` → `1.1.1.1`, `dns.google` → `8.8.8.8`.
 
----
+`DomainStrategy` — `AsIs`, `RouteOrder` — `block-proxy-direct`, `GlobalProxy` выключен, `UseChunkFiles` включён.
 
-## 📦 Доступные категории в базах
+## Имена категорий
 
-### 🌐 Домены (`geosite.dat`)
-Скомпилированы из репозитория `itdoginfo/allow-domains` + персональные правила:
+В профилях имена строчные: `geosite:custom`, `geoip:telegram`. Компилятор сохраняет имя файла списка как есть, поэтому файлы в `data/` тоже называются строчными. `block` из allow-domains публикуется как `ru-block`, `google_ai` — как `google-ai`.
 
-* `geosite:CUSTOM` — ваши персональные домены из файла `my-domains.txt`.
-* `geosite:TELEGRAM` — веб-версии, CDN и инфраструктура Telegram.
-* `geosite:META` — Instagram, Facebook, Threads, WhatsApp web.
-* `geosite:YOUTUBE` — видеохостинг YouTube и CDN `googlevideo`.
-* `geosite:TWITTER` — социальная сеть X (Twitter) и медиа-сервера.
-* `geosite:DISCORD` — голосовой и текстовый мессенджер Discord.
-* `geosite:TIKTOK` — платформа TikTok и стриминговые сервера.
-* `geosite:ROBLOX` — игровая платформа Roblox.
-* `geosite:GOOGLE-PLAY` / `geosite:GOOGLE-MEET` — сервисы Google.
-* `geosite:GOOGLE-AI` — Google Gemini, AI Studio и связанные API.
-* `geosite:HDREZKA` — онлайн-кинотеатр HDRezka.
-* `geosite:NEWS` — независимые и зарубежные новостные издания.
-* `geosite:PORN` / `geosite:HODCA` / `geosite:ANIME` — тематические категории.
-* `geosite:CLOUDFLARE` / `geosite:CLOUDFRONT` — зарубежные CDN.
-* `geosite:RU-BLOCK` / `geosite:GEOBLOCK` — реестры блокировок РКН и сервисы с гео-ограничениями.
+## Свои домены и IP
 
-### 📍 IP-адреса и подсети (`geoip.dat`)
-В дефолтном профиле маршрутизации используются только специализированные подсети:
-* `geoip:custom` — ваши персональные IP из `my-ips.txt`.
-* `geoip:telegram`
-* `geoip:twitter`
-* `geoip:meta`
-* `geoip:discord`
+- `my-domains.txt` — домены, которых нет в категориях itdog. Комментарии отбрасываются, всё содержимое попадает в один список `geosite:custom`.
+- `my-ips.txt` — CIDR для `geoip:custom`. Пока файл пуст, категория не создаётся и в профили не включается. После добавления адресов следующая сборка создаст категорию; ссылку `geoip:custom` нужно будет вернуть в профиль.
 
-> 🛡 **Обратите внимание:** Подсети хостингов (`geoip:cloudflare`, `geoip:cloudfront`, `geoip:digitalocean`, `geoip:hetzner`, `geoip:ovh`) исключены из автоматической маршрутизации `ProxyIp`. Это предотвращает ошибочное попадание в VPN белых российских сайтов (Авиасейлс, Госуслуги, банки), защищенных через Cloudflare или размещенных на зарубежных серверах.
+Пустая категория не заменяется на `example.com` или `127.0.0.1/32`, кроме `geosite:custom`: компилятору нужен хотя бы один домен, поэтому при пустом `my-domains.txt` туда записывается `example.com`.
 
----
+## Файлы
 
-## 🏆 Чем этот репозиторий отличается от других
+Релиз публикуется на ветку `release` и в GitHub Release только при изменении баз.
 
-1. **Минимальный вес баз (~28 Кб против 30–60 Мб в стандартных V2Fly):**
-   Обычные сборки geosite содержат сотни тысяч доменов со всего мира, из-за чего мобильные клиенты долго загружают конфигурацию, греют процессор и потребляют батарею. Здесь содержатся **только актуальные списки**, необходимые для обхода блокировок.
-2. **Идеальная совместимость имен правил:**
-   Строгий компилятор `domain-list-community` падает при наличии подчеркиваний `_` в названиях списков. В нашем пайплайне все имена автоматически валидируются и конвертируются в kebab-case (`google_play` ➔ `google-play`), предотвращая падение клиентов.
-3. **Защита от Windows переносов (`\r\n`):**
-   При редактировании `my-domains.txt` на Windows невидимый символ возврата каретки `\r` очищается пайплайном на лету.
-4. **Автоматическое слияние IPv4 + IPv6:**
-   Списки подсетей из разных каталогов автоматически склеиваются в единые категории `geoip` без дубликатов.
-
----
-
-## 📥 Прямые ссылки на файлы баз
-
-Если вам нужно указать ссылки на файлы вручную в других клиентах (v2rayN, Nekoray, Clash, Sing-box):
-
-### Вариант 1: GitHub Releases (Рекомендуется — свежие файлы без задержек)
-* **geosite.dat:** `https://github.com/commensal/domain-list-community/releases/latest/download/geosite.dat`
-* **geoip.dat:** `https://github.com/commensal/domain-list-community/releases/latest/download/geoip.dat`
-
-### Вариант 2: Raw GitHub (Кэш обновления до 5 минут)
-* **geosite.dat:** `https://raw.githubusercontent.com/commensal/domain-list-community/release/geosite.dat`
-* **geoip.dat:** `https://raw.githubusercontent.com/commensal/domain-list-community/release/geoip.dat`
-
-### Вариант 3: jsDelivr CDN
-* **geosite.dat:** `https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geosite.dat`
-* **geoip.dat:** `https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geoip.dat`
-
----
-
-## 🛠 Добавление собственных доменов и IP
-
-В корне репозитория есть два файла:
-* **`my-domains.txt`** — добавьте сюда ваши домены (по одному на строку). Они автоматически попадут в категорию `geosite:CUSTOM`.
-* **`my-ips.txt`** — добавьте сюда ваши IP-адреса или подсети в формате CIDR (например, `1.2.3.4/32`). Они попадут в категорию `geoip:custom`.
-
-После коммита изменений GitHub Actions автоматически пересоберет базы и опубликует свежий релиз!
+- `geosite.dat`: `https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geosite.dat`
+- `geoip.dat`: `https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geoip.dat`
+- Release: `https://github.com/commensal/domain-list-community/releases/latest/download/geosite.dat`
+- Raw: `https://raw.githubusercontent.com/commensal/domain-list-community/release/geosite.dat`

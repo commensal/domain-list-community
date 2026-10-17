@@ -13,3 +13,8 @@
 
 !my-domains.txt
 !my-ips.txt
+
+# Generated compiler input and local agent files. Never synced.
+/data/
+/geoip-source/
+/DSH/
