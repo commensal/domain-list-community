@@ -7,6 +7,9 @@ on:
       - master
     paths-ignore:
       - "**/README.md"
+      - "HAPP/**"
+      - "INCY/**"
+      - "index.html"
   schedule:
     - cron: "0 2 * * *"
 
@@ -41,7 +44,7 @@ jobs:
 
       - name: Fetch previous geo files
         run: |
-          git fetch --depth 1 origin release || true
+          git fetch --depth 1 origin release:refs/remotes/origin/release || true
           git show origin/release:geosite.dat > previous-geosite.dat 2>/dev/null || true
           git show origin/release:geoip.dat > previous-geoip.dat 2>/dev/null || true
 

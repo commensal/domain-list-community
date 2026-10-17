@@ -21,7 +21,13 @@ def same(a, b):
         return False
     return pathlib.Path(a).read_bytes() == pathlib.Path(b).read_bytes()
 
-changed = not (same(old_geosite, new_geosite) and same(old_geoip, new_geoip))
+# A missing previous file is not evidence of a change: publishing would
+# otherwise move LastUpdated on every run that failed to fetch release.
+changed = (
+    pathlib.Path(old_geosite).is_file()
+    and pathlib.Path(old_geoip).is_file()
+    and not (same(old_geosite, new_geosite) and same(old_geoip, new_geoip))
+)
 
 def load(path):
     text = path.read_text(encoding="utf-8").strip()
