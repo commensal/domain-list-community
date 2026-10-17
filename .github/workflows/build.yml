@@ -75,6 +75,7 @@ jobs:
           bash code/.github/scripts/update-routing.sh code previous-geosite.dat previous-geoip.dat \
             "$PWD/geosite.dat" "$PWD/geoip.dat" \
             | tee routing.env
+          grep -E '^(geo_changed|last_updated|compared )' routing.env >> "$GITHUB_STEP_SUMMARY"
           grep -E '^(geo_changed|last_updated)=' routing.env >> "$GITHUB_ENV"
 
       - name: Commit refreshed deeplinks

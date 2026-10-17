@@ -18,7 +18,7 @@ ROUTING_OLD_GEOIP="$old_geoip" \
 ROUTING_NEW_GEOSITE="$new_geosite" \
 ROUTING_NEW_GEOIP="$new_geoip" \
 python3 - << 'PY'
-import base64, json, os, pathlib, time
+import base64, hashlib, json, os, pathlib, time
 
 root = pathlib.Path(os.environ["ROUTING_ROOT"])
 old_geosite = os.environ["ROUTING_OLD_GEOSITE"]
@@ -180,14 +180,16 @@ payload = dump("happ", full_profile).split("://routing/add/", 1)[1]
 html = html[:start] + marker + payload + html[end:]
 page.write_text(html, encoding="utf-8", newline="\n")
 
+def describe(path):
+    file = pathlib.Path(path)
+    if not path or not file.is_file():
+        return f"{path or 'unset'}=missing"
+    data = file.read_bytes()
+    return f"{path}={len(data)}:{hashlib.sha256(data).hexdigest()[:12]}"
+
 print(f"geo_changed={'true' if changed else 'false'}")
 print(f"last_updated={stamp}")
-print(
-    "compared "
-    f"{pathlib.Path(new_geosite).stat().st_size if pathlib.Path(new_geosite).is_file() else 'missing'} "
-    "geosite bytes with "
-    f"{pathlib.Path(old_geosite).stat().st_size if pathlib.Path(old_geosite).is_file() else 'missing'}"
-)
+print("compared " + describe(new_geosite) + " with " + describe(old_geosite))
 PY
 
 # LIGHT was a byte-for-byte copy of DEFAULT and is not a third profile.
