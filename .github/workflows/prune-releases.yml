@@ -2,6 +2,11 @@ name: Prune old geo releases
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/prune-releases.yml
 
 permissions:
   contents: write
