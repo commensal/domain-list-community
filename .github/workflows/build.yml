@@ -105,7 +105,9 @@ jobs:
           cp ../geosite.dat ../geoip.dat ../geosite.dat.zip ../geoip.dat.zip ./*.sha256sum .
           git add geosite.dat geoip.dat *.zip *.sha256sum
           git commit -m "Update geo files ${{ env.last_updated }}"
-          git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:release
+          # A fresh repository has no memory of the remote release branch, so Git
+          # refuses a plain force push. The branch contains only generated files.
+          git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/release
 
       - name: Publish the release
         if: env.geo_changed == 'true'
