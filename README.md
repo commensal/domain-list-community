@@ -1,7 +1,7 @@
 # Compact GeoSite & GeoIP for Happ / Incy
 
-[![Build & Release](https://github.com/commensal/domain-list-community/actions/workflows/build.yml/badge.svg)](https://github.com/commensal/domain-list-community/actions/workflows/build.yml)
-[![GitHub Release](https://img.shields.io/github/v/release/commensal/domain-list-community?color=blue&label=Latest%20Release)](https://github.com/commensal/domain-list-community/releases/latest)
+[![Build & Release](https://github.com/commensal/geolite/actions/workflows/build.yml/badge.svg)](https://github.com/commensal/geolite/actions/workflows/build.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/commensal/geolite?color=blue&label=Latest%20Release)](https://github.com/commensal/geolite/releases/latest)
 
 Компактные `geosite.dat` и `geoip.dat` для раздельной маршрутизации в Happ, Incy, Xray и sing-box.
 
@@ -13,8 +13,8 @@
 
 | Клиент | Default | Full |
 | :--- | :--- | :--- |
-| Happ | [Добавить Default](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/HAPP/DEFAULT.DEEPLINK) | [Добавить Full](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/HAPP/FULL.DEEPLINK) |
-| Incy | [Добавить Default](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/INCY/DEFAULT.DEEPLINK) | [Добавить Full](https://raw.githubusercontent.com/commensal/domain-list-community/refs/heads/master/INCY/FULL.DEEPLINK) |
+| Happ | [Добавить Default](https://raw.githubusercontent.com/commensal/geolite/refs/heads/master/HAPP/DEFAULT.DEEPLINK) | [Добавить Full](https://raw.githubusercontent.com/commensal/geolite/refs/heads/master/HAPP/FULL.DEEPLINK) |
+| Incy | [Добавить Default](https://raw.githubusercontent.com/commensal/geolite/refs/heads/master/INCY/DEFAULT.DEEPLINK) | [Добавить Full](https://raw.githubusercontent.com/commensal/geolite/refs/heads/master/INCY/FULL.DEEPLINK) |
 
 Страница с кнопками полного профиля: [index.html](index.html).
 
@@ -66,7 +66,7 @@
 
 Релиз публикуется на ветку `release` и в GitHub Release только при изменении баз.
 
-- `geosite.dat`: `https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geosite.dat`
-- `geoip.dat`: `https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geoip.dat`
-- Release: `https://github.com/commensal/domain-list-community/releases/latest/download/geosite.dat`
-- Raw: `https://raw.githubusercontent.com/commensal/domain-list-community/release/geosite.dat`
+- `geosite.dat`: `https://cdn.jsdelivr.net/gh/commensal/geolite@release/geosite.dat`
+- `geoip.dat`: `https://cdn.jsdelivr.net/gh/commensal/geolite@release/geoip.dat`
+- Release: `https://github.com/commensal/geolite/releases/latest/download/geosite.dat`
+- Raw: `https://raw.githubusercontent.com/commensal/geolite/release/geosite.dat`

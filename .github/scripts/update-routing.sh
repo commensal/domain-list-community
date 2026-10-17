@@ -85,8 +85,8 @@ def make_profile(name, proxy_sites, proxy_ip):
         "DomesticDNSType": "DoU",
         "DomesticDNSDomain": "https://dns.adguard-dns.com/dns-query",
         "DomesticDNSIP": "94.140.14.14",
-        "Geoipurl": "https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geoip.dat",
-        "Geositeurl": "https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geosite.dat",
+        "Geoipurl": "https://cdn.jsdelivr.net/gh/commensal/geolite@release/geoip.dat",
+        "Geositeurl": "https://cdn.jsdelivr.net/gh/commensal/geolite@release/geosite.dat",
         "DnsHosts": {
             "cloudflare-dns.com": "1.1.1.1",
             "dns.google": "8.8.8.8",
