@@ -1,0 +1,44 @@
+name: Build check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Build and report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: code
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Clone allow-domains and previous geo files
+        run: |
+          git clone --depth 1 https://github.com/itdoginfo/allow-domains.git itdog-domains
+          git fetch --depth 1 origin release || true
+          git show origin/release:geosite.dat > previous-geosite.dat 2>/dev/null || true
+          git show origin/release:geoip.dat > previous-geoip.dat 2>/dev/null || true
+
+      - name: Build
+        run: |
+          set -o pipefail
+          bash code/.github/scripts/prepare-lists.sh code itdog-domains
+          (cd code && go run ./ --outputdir=../ --outputname=geosite.dat)
+          python3 code/.github/scripts/pack-geoip.py code/geoip-source geoip.dat
+          python3 code/.github/scripts/verify-dat.py geosite.dat geoip.dat code
+          bash code/.github/scripts/update-routing.sh code previous-geosite.dat previous-geoip.dat
+          {
+            echo "## Build check"
+            echo
+            echo "- geosite.dat: $(wc -c < geosite.dat) bytes"
+            echo "- geoip.dat: $(wc -c < geoip.dat) bytes"
+            cmp -s geosite.dat previous-geosite.dat && echo "- geosite: unchanged" || echo "- geosite: changed"
+            cmp -s geoip.dat previous-geoip.dat && echo "- geoip: unchanged" || echo "- geoip: changed"
+          } >> "$GITHUB_STEP_SUMMARY"
