@@ -1,0 +1,24 @@
+name: Prune old geo releases
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prune:
+    name: Keep two releases
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete releases older than the two newest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release list --limit 100 --json tagName,publishedAt --jq '.[].tagName' \
+            | awk 'NR > 2 { print }' \
+            | while read -r old; do
+                gh release delete "$old" --cleanup-tag --yes
+              done
+          gh release list --limit 10
