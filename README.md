@@ -5,7 +5,7 @@
 
 Компактные `geosite.dat` и `geoip.dat` для раздельной маршрутизации в Happ, Incy, Xray и sing-box.
 
-Списки берутся из [itdoginfo/allow-domains](https://github.com/itdoginfo/allow-domains) и из `my-domains.txt` / `my-ips.txt`. Сборка запускается каждый день в 02:00 UTC, по пушу в `master` и вручную. Новый релиз и новое значение `LastUpdated` появляются только когда содержимое `geosite.dat` или `geoip.dat` изменилось: Happ скачивает геофайлы заново только в этом случае.
+Списки берутся из [itdoginfo/allow-domains](https://github.com/itdoginfo/allow-domains) и из `my-domains.txt` / `my-ips.txt`. Сборка запускается каждый день в 02:00 UTC, по пушу в `master` и вручную. Новый релиз публикуется при изменении содержимого `geosite.dat` или `geoip.dat`. Значение `LastUpdated` меняется при обновлении баз или настроек самого профиля: Happ обновляет конфигурацию и перекачивает геофайлы только в этом случае.
 
 ## Установка
 

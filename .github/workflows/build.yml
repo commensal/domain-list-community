@@ -90,7 +90,7 @@ jobs:
           bash code/.github/scripts/update-routing.sh code previous-geosite.dat previous-geoip.dat \
             "$PWD/geosite.dat" "$PWD/geoip.dat" \
             | tee routing.env
-          grep -E '^(geo_changed|profile_changed|last_updated)=' routing.env | tee -a "$GITHUB_STEP_SUMMARY" >> "$GITHUB_ENV"
+          grep -E '^(geo_changed|profile_changed|routing_changed|last_updated)=' routing.env | tee -a "$GITHUB_STEP_SUMMARY" >> "$GITHUB_ENV"
 
       - name: Generate hashes and archives
         run: |
@@ -140,7 +140,7 @@ jobs:
               done
 
       - name: Commit refreshed deeplinks
-        if: env.geo_changed == 'true' || env.profile_changed == 'true'
+        if: env.routing_changed == 'true'
         working-directory: code
         run: |
           git config user.name "github-actions[bot]"
@@ -148,6 +148,7 @@ jobs:
           git add HAPP INCY index.html
           git diff --cached --quiet && exit 0
           git commit -m "Refresh routing LastUpdated ${{ env.last_updated }}"
+          git pull --rebase "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" master
           git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:master
 
       - name: Skip release

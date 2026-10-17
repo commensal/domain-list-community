@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/v2fly/domain-list-community/internal/dlc"
-	router "github.com/v2fly/v2ray-core/v5/app/router/routercommon"
+	router "github.com/v2fly/domain-list-community/internal/routercommon"
 	"google.golang.org/protobuf/proto"
 )
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Rewrite the two Happ/Incy deeplinks and index.html.
-# LastUpdated moves forward only when geosite.dat or geoip.dat actually changed,
-# which is the signal Happ uses to download the geo files again.
+# LastUpdated moves forward only when geosite.dat, geoip.dat or profile settings changed,
+# which is the signal Happ uses to refresh routing configuration.
 set -euo pipefail
 
 root="${1:?repository root}"
@@ -63,105 +63,110 @@ for profile in (orig_default, orig_full):
     except (TypeError, ValueError):
         pass
 
-default_profile = dict(orig_default)
-full_profile = dict(orig_full)
-
-def apply(profile, name):
-    profile["Name"] = name
-    profile["LastUpdated"] = str(previous)
-    profile["GlobalProxy"] = "false"
-    profile["RouteOrder"] = "block-proxy-direct"
-    profile["RemoteDNSType"] = "DoU"
-    profile["RemoteDNSDomain"] = "https://dns.dns-ai.ru/dns-query"
-    profile["RemoteDNSIP"] = "8.8.8.8"
-    profile["DomesticDNSType"] = "DoU"
-    profile["DomesticDNSDomain"] = "https://dns.adguard-dns.com/dns-query"
-    profile["DomesticDNSIP"] = "94.140.14.14"
-    profile["Geoipurl"] = "https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geoip.dat"
-    profile["Geositeurl"] = "https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geosite.dat"
-    profile["DnsHosts"] = {
-        "cloudflare-dns.com": "1.1.1.1",
-        "dns.google": "8.8.8.8",
-        "dns.adguard-dns.com": "94.140.14.14",
+def make_profile(name, proxy_sites, proxy_ip):
+    return {
+        "Name": name,
+        "LastUpdated": str(previous),
+        "GlobalProxy": "false",
+        "RouteOrder": "block-proxy-direct",
+        "RemoteDNSType": "DoU",
+        "RemoteDNSDomain": "dns.google",
+        "RemoteDNSIP": "8.8.8.8",
+        "DomesticDNSType": "DoU",
+        "DomesticDNSDomain": "dns.adguard-dns.com",
+        "DomesticDNSIP": "94.140.14.14",
+        "Geoipurl": "https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geoip.dat",
+        "Geositeurl": "https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geosite.dat",
+        "DnsHosts": {
+            "cloudflare-dns.com": "1.1.1.1",
+            "dns.google": "8.8.8.8",
+            "dns.adguard-dns.com": "94.140.14.14",
+        },
+        "DirectSites": [],
+        "DirectIp": [
+            "10.0.0.0/8",
+            "172.16.0.0/12",
+            "192.168.0.0/16",
+            "169.254.0.0/16",
+            "224.0.0.0/4",
+            "255.255.255.255",
+        ],
+        "BlockSites": [
+            "appcenter.ms",
+            "firebase.io",
+            "crashlytics.com",
+        ],
+        "BlockIp": [],
+        "DomainStrategy": "AsIs",
+        "FakeDNS": "true",
+        "UseChunkFiles": "true",
+        "ProxySites": proxy_sites,
+        "ProxyIp": proxy_ip,
     }
-    profile["DirectSites"] = []
-    profile["DirectIp"] = [
-        "10.0.0.0/8",
-        "172.16.0.0/12",
-        "192.168.0.0/16",
-        "169.254.0.0/16",
-        "224.0.0.0/4",
-        "255.255.255.255",
-    ]
-    profile["BlockSites"] = [
-        "appcenter.ms",
-        "firebase.io",
-        "crashlytics.com",
-    ]
-    profile["BlockIp"] = []
-    profile["DomainStrategy"] = "AsIs"
-    profile["FakeDNS"] = "true"
-    profile["UseChunkFiles"] = "true"
 
-apply(default_profile, "Black List")
-default_profile["ProxySites"] = [
-    "geosite:telegram",
-    "geosite:meta",
-    "geosite:custom",
-    "geosite:discord",
-    "geosite:porn",
-    "geosite:youtube",
-    "geosite:google-play",
-    "geosite:google-meet",
-    "geosite:hdrezka",
-    "geosite:news",
-    "geosite:roblox",
-    "geosite:tiktok",
-    "geosite:twitter",
-    "geosite:google-ai",
-    "geosite:geoblock",
-]
-default_profile["ProxyIp"] = [
-    "geoip:telegram",
-    "geoip:twitter",
-    "geoip:meta",
-    "geoip:discord",
-]
+default_profile = make_profile(
+    "Black List",
+    proxy_sites=[
+        "geosite:telegram",
+        "geosite:meta",
+        "geosite:custom",
+        "geosite:discord",
+        "geosite:porn",
+        "geosite:youtube",
+        "geosite:google-play",
+        "geosite:google-meet",
+        "geosite:hdrezka",
+        "geosite:news",
+        "geosite:roblox",
+        "geosite:tiktok",
+        "geosite:twitter",
+        "geosite:google-ai",
+        "geosite:geoblock",
+    ],
+    proxy_ip=[
+        "geoip:telegram",
+        "geoip:twitter",
+        "geoip:meta",
+        "geoip:discord",
+    ],
+)
 
-apply(full_profile, "Black List (Full)")
-full_profile["ProxySites"] = [
-    "geosite:custom",
-    "geosite:ru-block",
-    "geosite:geoblock",
-    "geosite:telegram",
-    "geosite:meta",
-    "geosite:youtube",
-    "geosite:discord",
-    "geosite:twitter",
-    "geosite:tiktok",
-    "geosite:roblox",
-    "geosite:google-play",
-    "geosite:google-meet",
-    "geosite:google-ai",
-    "geosite:cloudflare",
-    "geosite:cloudfront",
-    "geosite:digitalocean",
-    "geosite:hetzner",
-    "geosite:ovh",
-    "geosite:hdrezka",
-    "geosite:hodca",
-    "geosite:news",
-    "geosite:porn",
-    "geosite:anime",
-]
-full_profile["ProxyIp"] = [
-    "geoip:telegram",
-    "geoip:twitter",
-    "geoip:meta",
-    "geoip:discord",
-    "geoip:roblox",
-    "geoip:google-meet",
-]
+full_profile = make_profile(
+    "Black List (Full)",
+    proxy_sites=[
+        "geosite:custom",
+        "geosite:ru-block",
+        "geosite:geoblock",
+        "geosite:telegram",
+        "geosite:meta",
+        "geosite:youtube",
+        "geosite:discord",
+        "geosite:twitter",
+        "geosite:tiktok",
+        "geosite:roblox",
+        "geosite:google-play",
+        "geosite:google-meet",
+        "geosite:google-ai",
+        "geosite:cloudflare",
+        "geosite:cloudfront",
+        "geosite:digitalocean",
+        "geosite:hetzner",
+        "geosite:ovh",
+        "geosite:hdrezka",
+        "geosite:hodca",
+        "geosite:news",
+        "geosite:porn",
+        "geosite:anime",
+    ],
+    proxy_ip=[
+        "geoip:telegram",
+        "geoip:twitter",
+        "geoip:meta",
+        "geoip:discord",
+        "geoip:roblox",
+        "geoip:google-meet",
+    ],
+)
 
 def fields_differ(p1, p2):
     f1 = {k: v for k, v in p1.items() if k != "LastUpdated"}
@@ -194,9 +199,7 @@ html = html[:start] + marker + payload + html[end:]
 page.write_text(html, encoding="utf-8", newline="\n")
 
 print(f"geo_changed={'true' if changed else 'false'}")
-print(f"profile_changed={'true' if should_bump else 'false'}")
+print(f"profile_changed={'true' if config_changed else 'false'}")
+print(f"routing_changed={'true' if should_bump else 'false'}")
 print(f"last_updated={stamp}")
 PY
-
-# LIGHT was a byte-for-byte copy of DEFAULT and is not a third profile.
-rm -f "$root/HAPP/LIGHT.DEEPLINK" "$root/INCY/LIGHT.DEEPLINK"

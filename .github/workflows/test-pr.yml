@@ -31,19 +31,39 @@ jobs:
           go run . --datapath=./data --outputdir=./ --outputname=sample.dat
           python3 - << 'PY'
           from pathlib import Path
-          blob = Path("sample.dat").read_bytes()
-          codes = []
-          start = 0
-          mark = b"\n\x12"
-          while True:
-              i = blob.find(mark, start)
-              if i < 0:
-                  break
-              i += 1
-              length = blob[i + 1]
-              codes.append(blob[i + 2:i + 2 + length].decode())
-              start = i + 2 + length
+
+          def varint(data, index):
+              value = shift = 0
+              while True:
+                  byte = data[index]
+                  index += 1
+                  value |= (byte & 0x7F) << shift
+                  if byte < 128:
+                      return value, index
+                  shift += 7
+
+          def messages(data, field_number):
+              index = 0
+              found = []
+              while index < len(data):
+                  key, index = varint(data, index)
+                  field, wire = key >> 3, key & 7
+                  if wire == 0:
+                      _, index = varint(data, index)
+                  elif wire == 2:
+                      length, index = varint(data, index)
+                      if field == field_number:
+                          found.append(data[index:index + length])
+                      index += length
+                  else:
+                      raise ValueError(f"unsupported wire type {wire}")
+              return found
+
+          def country_codes(blob):
+              return sorted(messages(entry, 1)[0].decode("utf-8") for entry in messages(blob, 1))
+
+          codes = country_codes(Path("sample.dat").read_bytes())
           if codes != ["CUSTOM", "SAMPLE"]:
-              raise SystemExit(f"expected uppercase category codes, got {codes}")
+              raise SystemExit(f"expected uppercase category codes ['CUSTOM', 'SAMPLE'], got {codes}")
           print("category codes:", ", ".join(codes))
           PY

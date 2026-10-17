@@ -18,3 +18,8 @@
 /data/
 /geoip-source/
 /DSH/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
