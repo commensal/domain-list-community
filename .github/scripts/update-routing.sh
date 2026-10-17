@@ -94,7 +94,6 @@ def apply(profile, name):
         "255.255.255.255",
     ]
     profile["BlockSites"] = [
-        "geosite:category-ads-all",
         "appcenter.ms",
         "firebase.io",
         "crashlytics.com",

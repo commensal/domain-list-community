@@ -43,16 +43,6 @@ if [ -f "$root/my-domains.txt" ]; then
   append_rules "$root/my-domains.txt" "$data/custom"
 fi
 
-# geosite:category-ads-all is referenced by both routing profiles. The published
-# reject list is Loyalsoldier's combined AdGuard, EasyList, EasyListChina and
-# Peter Lowe domains, one domain per line.
-reject="$data/category-ads-all"
-curl -fsSL "https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/reject-list.txt" -o "$reject"
-if [ ! -s "$reject" ]; then
-  echo "Loyalsoldier reject-list.txt is empty" >&2
-  exit 1
-fi
-
 for f in "$data"/*; do
   [ -f "$f" ] || continue
   sort -u "$f" | sed '/^$/d' > "$f.tmp"
