@@ -43,19 +43,10 @@ elif has_old:
 else:
     changed = False
 
-def check_custom_ip():
-    custom_src = root / "geoip-source" / "custom.txt"
-    if custom_src.is_file() and custom_src.stat().st_size > 0:
-        return True
-    my_ips = root / "my-ips.txt"
-    if my_ips.is_file():
-        for line in my_ips.read_text(encoding="utf-8").splitlines():
-            s = line.strip()
-            if s and not s.startswith("#"):
-                return True
-    return False
-
-has_custom_ip = check_custom_ip()
+# geoip-source/custom.txt is produced by prepare-lists.sh and deleted if empty.
+# It serves as the single source of truth for whether geoip:custom exists.
+custom_txt = root / "geoip-source" / "custom.txt"
+has_custom_ip = custom_txt.is_file() and custom_txt.stat().st_size > 0
 custom_ip_rule = ["geoip:custom"] if has_custom_ip else []
 
 def load(path):
