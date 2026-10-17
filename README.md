@@ -36,7 +36,7 @@
 
 Российские банки и Aviasales в Default идут напрямую, потому что их домены не входят в эти списки, а подсети Cloudflare, CloudFront, DigitalOcean, Hetzner и OVH подключены только в Full.
 
-Оба профиля блокируют `appcenter.ms`, `firebase.io`, `crashlytics.com` и `geosite:category-ads-all`. Последняя категория поставляется приложением, этот репозиторий её не собирает.
+Оба профиля блокируют `appcenter.ms`, `firebase.io`, `crashlytics.com` и `geosite:category-ads-all`. Категория `category-ads-all` собирается из `reject-list.txt` Loyalsoldier: AdGuard DNS Filter, EasyList, EasyListChina и Peter Lowe.
 
 ## DNS
 
