@@ -26,11 +26,15 @@ def messages(data, field_number):
         field, wire = key >> 3, key & 7
         if wire == 0:
             _, index = varint(data, index)
+        elif wire == 1:
+            index += 8
         elif wire == 2:
             length, index = varint(data, index)
             if field == field_number:
                 found.append(data[index:index + length])
             index += length
+        elif wire == 5:
+            index += 4
         else:
             raise ValueError(f"unsupported wire type {wire}")
     return found

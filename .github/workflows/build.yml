@@ -51,14 +51,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Download previously published dat files directly from release branch.
+          # Check whether the release branch exists using ls-remote.
           # Cloning avoids the GitHub Contents API 1MB limit and ignores missing branch gracefully.
           rm -f previous-geosite.dat previous-geoip.dat
-          git clone --depth 1 --branch release "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" prev-release 2>/dev/null || true
-          if [ -d prev-release ]; then
+          if git ls-remote --exit-code --heads "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" release >/dev/null 2>&1; then
+            echo "release_exists=true" >> "$GITHUB_ENV"
+            git clone --depth 1 --branch release "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" prev-release
             [ -f prev-release/geosite.dat ] && cp prev-release/geosite.dat previous-geosite.dat || true
             [ -f prev-release/geoip.dat ] && cp prev-release/geoip.dat previous-geoip.dat || true
             rm -rf prev-release
+          else
+            echo "release_exists=false" >> "$GITHUB_ENV"
+            echo "Release branch does not exist yet (first run)."
           fi
           for f in previous-geosite.dat previous-geoip.dat; do
             if [ -f "$f" ]; then
@@ -82,15 +86,17 @@ jobs:
           python3 code/.github/scripts/pack-geoip.py code/geoip-source geoip.dat
           test -s geoip.dat
 
-      - name: Verify profile categories exist
-        run: python3 code/.github/scripts/verify-dat.py geosite.dat geoip.dat code
-
       - name: Update routing profiles
+        env:
+          RELEASE_EXISTS: ${{ env.release_exists }}
         run: |
           bash code/.github/scripts/update-routing.sh code previous-geosite.dat previous-geoip.dat \
             "$PWD/geosite.dat" "$PWD/geoip.dat" \
             | tee routing.env
           grep -E '^(geo_changed|profile_changed|routing_changed|last_updated)=' routing.env | tee -a "$GITHUB_STEP_SUMMARY" >> "$GITHUB_ENV"
+
+      - name: Verify profile categories exist
+        run: python3 code/.github/scripts/verify-dat.py geosite.dat geoip.dat code
 
       - name: Generate hashes and archives
         run: |
@@ -115,6 +121,15 @@ jobs:
           git commit -m "Update geo files ${{ env.last_updated }}"
           # The release branch holds only generated files, so replacing it is intended.
           git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:release
+
+      - name: Purge jsDelivr CDN cache
+        if: env.geo_changed == 'true'
+        run: |
+          for file in geosite.dat geoip.dat geosite.dat.zip geoip.dat.zip; do
+            echo "Purging jsDelivr cache for $file..."
+            curl -fsSL "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/$file" || true
+            echo ""
+          done
 
       - name: Publish the release
         if: env.geo_changed == 'true'

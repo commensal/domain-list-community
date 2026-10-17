@@ -16,12 +16,17 @@ find "$geoip_source" -mindepth 1 -delete
 append_rules() {
   local src="$1" dest="$2"
   [ -f "$src" ] || return 0
-  # A bare "domain:" prefix is redundant. A leading dot is a public-suffix zone,
-  # which this compiler rejects as a domain, so it becomes an anchored regexp.
-  sed -e 's/\r$//' -e 's/^domain://' -e 's/^\.\(.*\)$/regexp:\\.\1$/' "$src" \
-    | grep -v '^#' \
-    | grep -v '^package:' \
-    | grep -v '^[[:space:]]*$' >> "$dest" || true
+  # 1. Strip CR
+  # 2. Strip comments (#...)
+  # 3. Trim whitespace
+  # 4. Strip redundant "domain:" prefix
+  # 5. Strip leading dot (".ua" -> "ua" compiles to RootDomain, fast trie matching *.ua)
+  sed -e 's/\r$//' \
+      -e 's/#.*$//' \
+      -e 's/^[[:space:]]*//; s/[[:space:]]*$//' \
+      -e 's/^domain://' \
+      -e 's/^\.//' "$src" \
+    | grep -Ev '^(package:|[[:space:]]*$)' >> "$dest" || true
 }
 
 category_name() {

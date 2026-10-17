@@ -31,13 +31,32 @@ def same(a, b):
         return False
     return pathlib.Path(a).read_bytes() == pathlib.Path(b).read_bytes()
 
-# A missing previous file is not evidence of a change: publishing would
-# otherwise move LastUpdated on every run that failed to fetch release.
-changed = (
-    pathlib.Path(old_geosite).is_file()
-    and pathlib.Path(old_geoip).is_file()
-    and not (same(old_geosite, new_geosite) and same(old_geoip, new_geoip))
-)
+# A missing previous file is not evidence of a change unless the release branch
+# does not exist at all (first run on a fresh repository).
+release_exists = os.environ.get("RELEASE_EXISTS", "true").lower() != "false"
+has_old = pathlib.Path(old_geosite).is_file() and pathlib.Path(old_geoip).is_file()
+
+if not release_exists:
+    changed = True
+elif has_old:
+    changed = not (same(old_geosite, new_geosite) and same(old_geoip, new_geoip))
+else:
+    changed = False
+
+def check_custom_ip():
+    custom_src = root / "geoip-source" / "custom.txt"
+    if custom_src.is_file() and custom_src.stat().st_size > 0:
+        return True
+    my_ips = root / "my-ips.txt"
+    if my_ips.is_file():
+        for line in my_ips.read_text(encoding="utf-8").splitlines():
+            s = line.strip()
+            if s and not s.startswith("#"):
+                return True
+    return False
+
+has_custom_ip = check_custom_ip()
+custom_ip_rule = ["geoip:custom"] if has_custom_ip else []
 
 def load(path):
     text = path.read_text(encoding="utf-8").strip()
@@ -123,7 +142,7 @@ default_profile = make_profile(
         "geosite:google-ai",
         "geosite:geoblock",
     ],
-    proxy_ip=[
+    proxy_ip=custom_ip_rule + [
         "geoip:telegram",
         "geoip:twitter",
         "geoip:meta",
@@ -158,7 +177,7 @@ full_profile = make_profile(
         "geosite:porn",
         "geosite:anime",
     ],
-    proxy_ip=[
+    proxy_ip=custom_ip_rule + [
         "geoip:telegram",
         "geoip:twitter",
         "geoip:meta",
