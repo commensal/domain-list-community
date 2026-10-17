@@ -11,11 +11,20 @@ old_geoip="${3:-}"
 new_geosite="${4:-$root/geosite.dat}"
 new_geoip="${5:-$root/geoip.dat}"
 
-python3 - "$root" "$old_geosite" "$old_geoip" "$new_geosite" "$new_geoip" << 'PY'
-import base64, json, pathlib, sys, time
+# The heredoc occupies stdin, so the paths travel through the environment.
+ROUTING_ROOT="$root" \
+ROUTING_OLD_GEOSITE="$old_geosite" \
+ROUTING_OLD_GEOIP="$old_geoip" \
+ROUTING_NEW_GEOSITE="$new_geosite" \
+ROUTING_NEW_GEOIP="$new_geoip" \
+python3 - << 'PY'
+import base64, json, os, pathlib, time
 
-root, old_geosite, old_geoip, new_geosite, new_geoip = sys.argv[1:]
-root = pathlib.Path(root)
+root = pathlib.Path(os.environ["ROUTING_ROOT"])
+old_geosite = os.environ["ROUTING_OLD_GEOSITE"]
+old_geoip = os.environ["ROUTING_OLD_GEOIP"]
+new_geosite = os.environ["ROUTING_NEW_GEOSITE"]
+new_geoip = os.environ["ROUTING_NEW_GEOIP"]
 
 def same(a, b):
     if not a or not pathlib.Path(a).is_file() or not pathlib.Path(b).is_file():
