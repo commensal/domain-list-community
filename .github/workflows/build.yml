@@ -136,6 +136,13 @@ jobs:
             --title "$tag" \
             --notes "Geo files changed. Routing LastUpdated is ${{ env.last_updated }}." \
             ./geosite.dat ./geosite.dat.zip ./geoip.dat ./geoip.dat.zip ./*.sha256sum
+          # Keep the new release and one previous release. Clients only need the
+          # latest files, and the previous tag is the rollback point.
+          gh release list --limit 100 --json tagName,publishedAt --jq '.[].tagName' \
+            | awk 'NR > 2 { print }' \
+            | while read -r old; do
+                gh release delete "$old" --cleanup-tag --yes
+              done
 
       - name: Skip release
         if: env.geo_changed != 'true'
