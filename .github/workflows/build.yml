@@ -43,14 +43,21 @@ jobs:
         run: git clone --depth 1 https://github.com/itdoginfo/allow-domains.git itdog-domains
 
       - name: Fetch previous geo files
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # A failed show must not leave a zero-byte file behind: the comparison
-          # would treat that empty file as the previous release.
+          # git show cannot read these blobs from the shallow release fetch, and
+          # redirecting a failed show would leave an empty file that hides a real
+          # change. Download the published bytes and keep a file only when it exists.
           rm -f previous-geosite.dat previous-geoip.dat
-          if git fetch --depth 1 origin release; then
-            git show FETCH_HEAD:geosite.dat > previous-geosite.dat
-            git show FETCH_HEAD:geoip.dat > previous-geoip.dat
-          fi
+          for name in geosite.dat geoip.dat; do
+            if gh api "repos/${{ github.repository }}/contents/${name}?ref=release" \
+              --jq .content | tr -d '\n' | base64 -d > "previous-${name}.part"; then
+              mv "previous-${name}.part" "previous-${name}"
+            else
+              rm -f "previous-${name}.part"
+            fi
+          done
           wc -c previous-geosite.dat previous-geoip.dat
           sha256sum previous-geosite.dat previous-geoip.dat
 
@@ -68,8 +75,6 @@ jobs:
           # Xray uppercases the rule code and compares those bytes exactly.
           python3 code/.github/scripts/pack-geoip.py code/geoip-source geoip.dat
           test -s geoip.dat
-          wc -c geosite.dat geoip.dat
-          sha256sum geosite.dat geoip.dat
 
       - name: Verify profile categories exist
         run: python3 code/.github/scripts/verify-dat.py geosite.dat geoip.dat code
