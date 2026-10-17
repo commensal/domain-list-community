@@ -125,6 +125,8 @@ jobs:
         if: env.geo_changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          # The checkout lives in code/. gh otherwise looks for .git here and fails.
+          GH_REPO: ${{ github.repository }}
         run: |
           tag="geo-${{ env.last_updated }}"
           gh release delete "$tag" --cleanup-tag --yes || true
