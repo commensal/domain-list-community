@@ -21,9 +21,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release list --limit 100 --json tagName,publishedAt --jq '.[].tagName' \
-            | awk 'NR > 2 { print }' \
-            | while read -r old; do
-                gh release delete "$old" --cleanup-tag --yes
-              done
+          # gh release list returns at most 100 tags, so repeat until only the
+          # newest two remain.
+          while true; do
+            count=$(gh release list --limit 100 --json tagName --jq 'length')
+            if [ "$count" -le 2 ]; then
+              break
+            fi
+            gh release list --limit 100 --json tagName,publishedAt --jq '.[].tagName' \
+              | awk 'NR > 2 { print }' \
+              | while read -r old; do
+                  gh release delete "$old" --cleanup-tag --yes
+                done
+          done
           gh release list --limit 10
