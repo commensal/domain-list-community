@@ -76,13 +76,14 @@ def apply(profile, name):
     profile["RemoteDNSDomain"] = "https://dns.dns-ai.ru/dns-query"
     profile["RemoteDNSIP"] = "8.8.8.8"
     profile["DomesticDNSType"] = "DoU"
-    profile["DomesticDNSDomain"] = "https://dns.google/dns-query"
-    profile["DomesticDNSIP"] = "77.88.8.8"
+    profile["DomesticDNSDomain"] = "https://dns.adguard-dns.com/dns-query"
+    profile["DomesticDNSIP"] = "94.140.14.14"
     profile["Geoipurl"] = "https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geoip.dat"
     profile["Geositeurl"] = "https://cdn.jsdelivr.net/gh/commensal/domain-list-community@release/geosite.dat"
     profile["DnsHosts"] = {
         "cloudflare-dns.com": "1.1.1.1",
         "dns.google": "8.8.8.8",
+        "dns.adguard-dns.com": "94.140.14.14",
     }
     profile["DirectSites"] = []
     profile["DirectIp"] = [
