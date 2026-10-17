@@ -137,7 +137,7 @@ func (gs *GeoSites) assembleDat(task DatTask) error {
 	case ModeAllowlist:
 		allowedIdxes := make([]int, 0, len(task.Lists))
 		for _, list := range task.Lists {
-			if idx, ok := gs.SiteIdx[strings.ToLower(list)]; ok {
+			if idx, ok := gs.SiteIdx[strings.ToUpper(list)]; ok {
 				allowedIdxes = append(allowedIdxes, idx)
 			} else {
 				return fmt.Errorf("list %q not found for allowlist task", list)
@@ -156,7 +156,7 @@ func (gs *GeoSites) assembleDat(task DatTask) error {
 	case ModeDenylist:
 		deniedMap := make(map[int]bool, len(task.Lists))
 		for _, list := range task.Lists {
-			if idx, ok := gs.SiteIdx[strings.ToLower(list)]; ok {
+			if idx, ok := gs.SiteIdx[strings.ToUpper(list)]; ok {
 				deniedMap[idx] = true
 			} else {
 				fmt.Printf("[Warn] list %q not found in denylist task %q\n", list, task.Name)
@@ -164,14 +164,12 @@ func (gs *GeoSites) assembleDat(task DatTask) error {
 		}
 		deniedlen := len(deniedMap)
 		if deniedlen == 0 {
-			fmt.Printf("[Warn] nothing to deny in task %q\n", task.Name)
-			geoSiteList.Entry = gs.Sites
-		} else {
-			geoSiteList.Entry = make([]*router.GeoSite, 0, len(gs.Sites)-deniedlen)
-			for i, site := range gs.Sites {
-				if !deniedMap[i] {
-					geoSiteList.Entry = append(geoSiteList.Entry, site)
-				}
+			return fmt.Errorf("no lists to deny found for denylist task %q", task.Name)
+		}
+		geoSiteList.Entry = make([]*router.GeoSite, 0, len(gs.Sites)-deniedlen)
+		for i, site := range gs.Sites {
+			if !deniedMap[i] {
+				geoSiteList.Entry = append(geoSiteList.Entry, site)
 			}
 		}
 	}
@@ -384,16 +382,22 @@ func (p *Processor) loadData(listName string, path string) error {
 	lineIdx := 0
 	for scanner.Scan() {
 		lineIdx++
-		line, _, _ := strings.Cut(scanner.Text(), "#") // Remove comments
+		line := scanner.Text()
+		if lineIdx == 1 {
+			line = strings.TrimPrefix(line, "\ufeff")
+		}
+		line, _, _ = strings.Cut(line, "#") // Remove comments
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		typ, rule, isTypeSpecified := strings.Cut(line, ":")
-		if !isTypeSpecified { // Default RuleType
-			typ, rule = dlc.RuleTypeDomain, typ
+		var typ, rule string
+		if prefix, rest, isTypeSpecified := strings.Cut(line, ":"); isTypeSpecified {
+			typ = strings.ToLower(prefix)
+			rule = rest
 		} else {
-			typ = strings.ToLower(typ)
+			typ = dlc.RuleTypeDomain
+			rule = line
 		}
 		if typ == dlc.RuleTypeInclude {
 			inc, err := parseInclusion(rule)
@@ -602,7 +606,7 @@ func run() error {
 		return strings.Compare(a.CountryCode, b.CountryCode)
 	})
 	for i := range gs.Sites {
-		gs.SiteIdx[gs.Sites[i].CountryCode] = i
+		gs.SiteIdx[strings.ToUpper(gs.Sites[i].CountryCode)] = i
 	}
 
 	// Load tasks and generate dat files

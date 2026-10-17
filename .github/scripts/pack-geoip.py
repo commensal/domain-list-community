@@ -39,12 +39,18 @@ def main():
     entries = bytearray()
     for path in sorted(pathlib.Path(source).glob("*.txt")):
         cidrs = []
-        for line in path.read_text(encoding="utf-8").splitlines():
+        for line_num, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             line = line.strip()
             if line and not line.startswith("#"):
-                cidrs.append(ipaddress.ip_network(line, strict=False))
+                try:
+                    cidrs.append(ipaddress.ip_network(line, strict=False))
+                except ValueError as err:
+                    raise SystemExit(f"invalid CIDR in {path.name}:{line_num} ({line}): {err}")
         if not cidrs:
             raise SystemExit(f"{path.name} has no CIDR")
+        v4 = [c for c in cidrs if c.version == 4]
+        v6 = [c for c in cidrs if c.version == 6]
+        cidrs = list(ipaddress.collapse_addresses(v4)) + list(ipaddress.collapse_addresses(v6))
         code = path.stem.upper().encode()
         message = length_delimited(1, code) + b"".join(
             length_delimited(2, cidr_message(cidr)) for cidr in cidrs

@@ -45,7 +45,7 @@ def country_codes(blob):
 def profile_codes(path, key):
     payload = path.read_text(encoding="utf-8").split("://routing/add/", 1)[1].strip()
     profile = json.loads(base64.b64decode(payload))
-    prefix = "geosite:" if key == "ProxySites" else "geoip:"
+    prefix = "geosite:" if "Sites" in key else "geoip:"
     return {
         item[len(prefix):]
         for item in profile.get(key, [])
@@ -71,12 +71,17 @@ def main():
             if not path.is_file():
                 missing.append(f"missing profile {folder}/{name}")
                 continue
-            for code in sorted(profile_codes(path, "ProxySites")):
-                if code.upper() not in geosite:
-                    missing.append(f"{folder}/{name} geosite:{code}")
-            for code in sorted(profile_codes(path, "ProxyIp")):
-                if code.upper() not in geoip:
-                    missing.append(f"{folder}/{name} geoip:{code}")
+            for key, target, label in [
+                ("ProxySites", geosite, "geosite"),
+                ("BlockSites", geosite, "geosite"),
+                ("DirectSites", geosite, "geosite"),
+                ("ProxyIp", geoip, "geoip"),
+                ("BlockIp", geoip, "geoip"),
+                ("DirectIp", geoip, "geoip"),
+            ]:
+                for code in sorted(profile_codes(path, key)):
+                    if code.upper() not in target:
+                        missing.append(f"{folder}/{name} {label}:{code} (in {key})")
     if missing:
         raise SystemExit("profiles reference missing categories:\n" + "\n".join(missing))
     print(f"verified {len(geosite)} geosite and {len(geoip)} geoip categories")

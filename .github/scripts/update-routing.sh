@@ -53,23 +53,22 @@ def dump(scheme, profile):
 
 default_path = root / "HAPP" / "DEFAULT.DEEPLINK"
 full_path = root / "HAPP" / "FULL.DEEPLINK"
-_, default_profile = load(default_path)
-_, full_profile = load(full_path)
+_, orig_default = load(default_path)
+_, orig_full = load(full_path)
 
 previous = 0
-for profile in (default_profile, full_profile):
+for profile in (orig_default, orig_full):
     try:
         previous = max(previous, int(profile.get("LastUpdated") or 0))
     except (TypeError, ValueError):
         pass
 
-# A newer unix time is what makes an already imported profile fetch geo files.
-# An unchanged pair must keep the old value, or clients re-download for nothing.
-stamp = str(max(int(time.time()), previous + 1)) if changed else str(previous)
+default_profile = dict(orig_default)
+full_profile = dict(orig_full)
 
 def apply(profile, name):
     profile["Name"] = name
-    profile["LastUpdated"] = stamp
+    profile["LastUpdated"] = str(previous)
     profile["GlobalProxy"] = "false"
     profile["RouteOrder"] = "block-proxy-direct"
     profile["RemoteDNSType"] = "DoU"
@@ -164,6 +163,20 @@ full_profile["ProxyIp"] = [
     "geoip:google-meet",
 ]
 
+def fields_differ(p1, p2):
+    f1 = {k: v for k, v in p1.items() if k != "LastUpdated"}
+    f2 = {k: v for k, v in p2.items() if k != "LastUpdated"}
+    return f1 != f2
+
+config_changed = fields_differ(orig_default, default_profile) or fields_differ(orig_full, full_profile)
+should_bump = changed or config_changed
+
+# A newer unix time is what makes an already imported profile fetch geo files.
+# An unchanged profile must keep the old value, or clients re-download for nothing.
+stamp = str(max(int(time.time()), previous + 1)) if should_bump else str(previous)
+default_profile["LastUpdated"] = stamp
+full_profile["LastUpdated"] = stamp
+
 default_path.write_text(dump("happ", default_profile) + "\n", encoding="utf-8", newline="\n")
 full_path.write_text(dump("happ", full_profile) + "\n", encoding="utf-8", newline="\n")
 (root / "INCY" / "DEFAULT.DEEPLINK").write_text(dump("incy", default_profile) + "\n", encoding="utf-8", newline="\n")
@@ -181,6 +194,7 @@ html = html[:start] + marker + payload + html[end:]
 page.write_text(html, encoding="utf-8", newline="\n")
 
 print(f"geo_changed={'true' if changed else 'false'}")
+print(f"profile_changed={'true' if should_bump else 'false'}")
 print(f"last_updated={stamp}")
 PY
 

@@ -37,7 +37,8 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: stable
+          go-version-file: code/go.mod
+          cache-dependency-path: code/go.sum
 
       - name: Clone itdoginfo/allow-domains
         run: git clone --depth 1 https://github.com/itdoginfo/allow-domains.git itdog-domains
@@ -46,20 +47,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # git show cannot read these blobs from the shallow release fetch, and
-          # redirecting a failed show would leave an empty file that hides a real
-          # change. Download the published bytes and keep a file only when it exists.
+          # Download previously published dat files directly from release branch.
+          # Cloning avoids the GitHub Contents API 1MB limit and ignores missing branch gracefully.
           rm -f previous-geosite.dat previous-geoip.dat
-          for name in geosite.dat geoip.dat; do
-            if gh api "repos/${{ github.repository }}/contents/${name}?ref=release" \
-              --jq .content | tr -d '\n' | base64 -d > "previous-${name}.part"; then
-              mv "previous-${name}.part" "previous-${name}"
-            else
-              rm -f "previous-${name}.part"
+          git clone --depth 1 --branch release "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" prev-release 2>/dev/null || true
+          if [ -d prev-release ]; then
+            [ -f prev-release/geosite.dat ] && cp prev-release/geosite.dat previous-geosite.dat || true
+            [ -f prev-release/geoip.dat ] && cp prev-release/geoip.dat previous-geoip.dat || true
+            rm -rf prev-release
+          fi
+          for f in previous-geosite.dat previous-geoip.dat; do
+            if [ -f "$f" ]; then
+              wc -c "$f"
+              sha256sum "$f"
             fi
           done
-          wc -c previous-geosite.dat previous-geoip.dat
-          sha256sum previous-geosite.dat previous-geoip.dat
 
       - name: Prepare category lists
         run: bash code/.github/scripts/prepare-lists.sh code itdog-domains
@@ -79,23 +81,12 @@ jobs:
       - name: Verify profile categories exist
         run: python3 code/.github/scripts/verify-dat.py geosite.dat geoip.dat code
 
-      - name: Update routing profiles when geo files changed
+      - name: Update routing profiles
         run: |
           bash code/.github/scripts/update-routing.sh code previous-geosite.dat previous-geoip.dat \
             "$PWD/geosite.dat" "$PWD/geoip.dat" \
             | tee routing.env
-          grep -E '^(geo_changed|last_updated)=' routing.env | tee -a "$GITHUB_STEP_SUMMARY" >> "$GITHUB_ENV"
-
-      - name: Commit refreshed deeplinks
-        if: env.geo_changed == 'true'
-        working-directory: code
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add HAPP INCY index.html
-          git diff --cached --quiet && exit 0
-          git commit -m "Refresh routing LastUpdated ${{ env.last_updated }}"
-          git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:master
+          grep -E '^(geo_changed|profile_changed|last_updated)=' routing.env | tee -a "$GITHUB_STEP_SUMMARY" >> "$GITHUB_ENV"
 
       - name: Generate hashes and archives
         run: |
@@ -138,12 +129,23 @@ jobs:
             ./geosite.dat ./geosite.dat.zip ./geoip.dat ./geoip.dat.zip ./*.sha256sum
           # Keep the new release and one previous release. Clients only need the
           # latest files, and the previous tag is the rollback point.
-          gh release list --limit 100 --json tagName,publishedAt --jq '.[].tagName' \
+          gh release list --limit 1000 --json tagName,publishedAt --jq '.[].tagName' \
             | awk 'NR > 2 { print }' \
             | while read -r old; do
-                gh release delete "$old" --cleanup-tag --yes
+                [ -n "$old" ] && gh release delete "$old" --cleanup-tag --yes || true
               done
+
+      - name: Commit refreshed deeplinks
+        if: env.geo_changed == 'true' || env.profile_changed == 'true'
+        working-directory: code
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add HAPP INCY index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Refresh routing LastUpdated ${{ env.last_updated }}"
+          git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:master
 
       - name: Skip release
         if: env.geo_changed != 'true'
-        run: echo "Geo files are unchanged. LastUpdated, the release branch and tags were left as they are."
+        run: echo "Geo files are unchanged. The release branch and tags were left as they are."

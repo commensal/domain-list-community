@@ -6,6 +6,9 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	router "github.com/v2fly/v2ray-core/v5/app/router/routercommon"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestParseEntry(t *testing.T) {
@@ -212,3 +215,141 @@ func assertPlains(t *testing.T, name string, entries []*Entry, want []string) {
 		t.Errorf("%s = %v, want %v", name, got, want)
 	}
 }
+
+func TestAssembleDat(t *testing.T) {
+	outDir := t.TempDir()
+	*outputDir = outDir
+
+	siteCustom := &router.GeoSite{
+		CountryCode: "CUSTOM",
+		Domain: []*router.Domain{
+			{Type: router.Domain_RootDomain, Value: "example.com"},
+		},
+	}
+	siteTelegram := &router.GeoSite{
+		CountryCode: "TELEGRAM",
+		Domain: []*router.Domain{
+			{Type: router.Domain_RootDomain, Value: "t.me"},
+		},
+	}
+
+	gs := &GeoSites{
+		Sites: []*router.GeoSite{siteCustom, siteTelegram},
+		SiteIdx: map[string]int{
+			"CUSTOM":   0,
+			"TELEGRAM": 1,
+		},
+	}
+
+	t.Run("ModeAll", func(t *testing.T) {
+		task := DatTask{Name: "all.dat", Mode: ModeAll}
+		if err := gs.assembleDat(task); err != nil {
+			t.Fatalf("assembleDat failed: %v", err)
+		}
+		data, err := os.ReadFile(filepath.Join(outDir, "all.dat"))
+		if err != nil {
+			t.Fatalf("failed to read output dat: %v", err)
+		}
+		list := new(router.GeoSiteList)
+		if err := proto.Unmarshal(data, list); err != nil {
+			t.Fatalf("failed to unmarshal output: %v", err)
+		}
+		if len(list.Entry) != 2 {
+			t.Errorf("got %d entries, want 2", len(list.Entry))
+		}
+	})
+
+	t.Run("ModeAllowlist case insensitive", func(t *testing.T) {
+		task := DatTask{
+			Name:  "allow.dat",
+			Mode:  ModeAllowlist,
+			Lists: []string{"custom", "TELEGRAM"},
+		}
+		if err := gs.assembleDat(task); err != nil {
+			t.Fatalf("assembleDat failed: %v", err)
+		}
+		data, err := os.ReadFile(filepath.Join(outDir, "allow.dat"))
+		if err != nil {
+			t.Fatalf("failed to read output dat: %v", err)
+		}
+		list := new(router.GeoSiteList)
+		if err := proto.Unmarshal(data, list); err != nil {
+			t.Fatalf("failed to unmarshal output: %v", err)
+		}
+		if len(list.Entry) != 2 {
+			t.Fatalf("got %d entries, want 2", len(list.Entry))
+		}
+		if list.Entry[0].CountryCode != "CUSTOM" || list.Entry[1].CountryCode != "TELEGRAM" {
+			t.Errorf("unexpected entries: %v", list.Entry)
+		}
+	})
+
+	t.Run("ModeAllowlist missing list", func(t *testing.T) {
+		task := DatTask{
+			Name:  "missing.dat",
+			Mode:  ModeAllowlist,
+			Lists: []string{"nonexistent"},
+		}
+		if err := gs.assembleDat(task); err == nil {
+			t.Fatal("assembleDat succeeded, want error for nonexistent list")
+		}
+	})
+
+	t.Run("ModeDenylist case insensitive", func(t *testing.T) {
+		task := DatTask{
+			Name:  "deny.dat",
+			Mode:  ModeDenylist,
+			Lists: []string{"telegram"},
+		}
+		if err := gs.assembleDat(task); err != nil {
+			t.Fatalf("assembleDat failed: %v", err)
+		}
+		data, err := os.ReadFile(filepath.Join(outDir, "deny.dat"))
+		if err != nil {
+			t.Fatalf("failed to read output dat: %v", err)
+		}
+		list := new(router.GeoSiteList)
+		if err := proto.Unmarshal(data, list); err != nil {
+			t.Fatalf("failed to unmarshal output: %v", err)
+		}
+		if len(list.Entry) != 1 {
+			t.Fatalf("got %d entries, want 1", len(list.Entry))
+		}
+		if list.Entry[0].CountryCode != "CUSTOM" {
+			t.Errorf("got entry %q, want CUSTOM", list.Entry[0].CountryCode)
+		}
+	})
+
+	t.Run("ModeDenylist nothing to deny error", func(t *testing.T) {
+		task := DatTask{
+			Name:  "deny_none.dat",
+			Mode:  ModeDenylist,
+			Lists: []string{"nonexistent"},
+		}
+		if err := gs.assembleDat(task); err == nil {
+			t.Fatal("assembleDat succeeded, want error when no lists to deny")
+		}
+	})
+}
+
+func TestLoadDataBOM(t *testing.T) {
+	dataPath := t.TempDir()
+	filePath := filepath.Join(dataPath, "bomtest")
+	content := "\ufeffdomain:example.com\n"
+	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
+	}
+
+	processor := &Processor{parsedListByName: make(map[string]*ParsedList)}
+	if err := processor.loadData("bomtest", filePath); err != nil {
+		t.Fatalf("loadData failed: %v", err)
+	}
+	pl, ok := processor.parsedListByName["bomtest"]
+	if !ok || len(pl.Entries) != 1 {
+		t.Fatalf("expected 1 entry, got %v", pl)
+	}
+	if pl.Entries[0].Plain != "domain:example.com" {
+		t.Errorf("got %q, want domain:example.com", pl.Entries[0].Plain)
+	}
+}
+
