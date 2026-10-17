@@ -44,9 +44,13 @@ jobs:
 
       - name: Fetch previous geo files
         run: |
-          git fetch --depth 1 origin release:refs/remotes/origin/release || true
-          git show origin/release:geosite.dat > previous-geosite.dat 2>/dev/null || true
-          git show origin/release:geoip.dat > previous-geoip.dat 2>/dev/null || true
+          # A failed show must not leave a zero-byte file behind: the comparison
+          # would treat that empty file as the previous release.
+          rm -f previous-geosite.dat previous-geoip.dat
+          if git fetch --depth 1 origin release; then
+            git show FETCH_HEAD:geosite.dat > previous-geosite.dat
+            git show FETCH_HEAD:geoip.dat > previous-geoip.dat
+          fi
 
       - name: Prepare category lists
         run: bash code/.github/scripts/prepare-lists.sh code itdog-domains
@@ -59,9 +63,7 @@ jobs:
 
       - name: Build geoip.dat
         run: |
-          # v2fly/geoip stores every list name in uppercase and cannot be told
-          # otherwise. Xray compares the stored bytes after uppercasing the rule,
-          # so the packer below keeps the filename case.
+          # Xray uppercases the rule code and compares those bytes exactly.
           python3 code/.github/scripts/pack-geoip.py code/geoip-source geoip.dat
           test -s geoip.dat
 
@@ -97,17 +99,17 @@ jobs:
       - name: Publish geo files to the release branch
         if: env.geo_changed == 'true'
         run: |
-          git init release-publish
+          mkdir -p release-publish
           cd release-publish
+          cp ../geosite.dat ../geoip.dat ../geosite.dat.zip ../geoip.dat.zip ../*.sha256sum .
+          git init
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b release
-          cp ../geosite.dat ../geoip.dat ../geosite.dat.zip ../geoip.dat.zip ./*.sha256sum .
           git add geosite.dat geoip.dat *.zip *.sha256sum
           git commit -m "Update geo files ${{ env.last_updated }}"
-          # A fresh repository has no memory of the remote release branch, so Git
-          # refuses a plain force push. The branch contains only generated files.
-          git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/heads/release
+          # The release branch holds only generated files, so replacing it is intended.
+          git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:release
 
       - name: Publish the release
         if: env.geo_changed == 'true'

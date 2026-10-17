@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Pack CIDR text files into a v2ray geoip.dat, preserving filename case."""
+"""Pack CIDR text files into a v2ray geoip.dat.
+
+Xray uppercases the code from a geoip: rule and compares those bytes exactly,
+so every stored country code is uppercase.
+"""
 
 import ipaddress
 import pathlib
@@ -41,11 +45,12 @@ def main():
                 cidrs.append(ipaddress.ip_network(line, strict=False))
         if not cidrs:
             raise SystemExit(f"{path.name} has no CIDR")
-        message = length_delimited(1, path.stem.encode()) + b"".join(
+        code = path.stem.upper().encode()
+        message = length_delimited(1, code) + b"".join(
             length_delimited(2, cidr_message(cidr)) for cidr in cidrs
         )
         entries += length_delimited(1, message)
-        print(f"{path.stem}: {len(cidrs)} CIDR")
+        print(f"{code.decode()}: {len(cidrs)} CIDR")
     pathlib.Path(output).write_bytes(entries)
 
 

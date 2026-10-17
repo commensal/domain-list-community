@@ -43,7 +43,7 @@ jobs:
               length = blob[i + 1]
               codes.append(blob[i + 2:i + 2 + length].decode())
               start = i + 2 + length
-          if codes != ["custom", "sample"]:
-              raise SystemExit(f"expected lowercase category codes, got {codes}")
+          if codes != ["CUSTOM", "SAMPLE"]:
+              raise SystemExit(f"expected uppercase category codes, got {codes}")
           print("category codes:", ", ".join(codes))
           PY

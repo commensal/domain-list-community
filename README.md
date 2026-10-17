@@ -53,7 +53,7 @@
 
 ## Имена категорий
 
-В профилях имена строчные: `geosite:custom`, `geoip:telegram`. Компилятор сохраняет имя файла списка как есть, поэтому файлы в `data/` тоже называются строчными. `block` из allow-domains публикуется как `ru-block`, `google_ai` — как `google-ai`.
+В профилях имена строчные: `geosite:custom`, `geoip:telegram`. Happ и Xray перед поиском переводят код в верхний регистр и сравнивают байты как есть, поэтому внутри `geosite.dat` и `geoip.dat` те же категории записаны как `CUSTOM` и `TELEGRAM`. `block` из allow-domains публикуется как `ru-block`, `google_ai` — как `google-ai`.
 
 ## Свои домены и IP
 

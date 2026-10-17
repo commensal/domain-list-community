@@ -58,9 +58,11 @@ def main():
     root = pathlib.Path(root)
     geosite = country_codes(pathlib.Path(geosite_path).read_bytes())
     geoip = country_codes(pathlib.Path(geoip_path).read_bytes())
-    mixed = sorted(code for code in geosite | geoip if code != code.lower())
+    # The profile writes geosite:custom, but Xray uppercases that code before
+    # the byte comparison. A lowercase code in the dat is therefore unreachable.
+    mixed = sorted(code for code in geosite | geoip if code != code.upper())
     if mixed:
-        raise SystemExit("category codes must be lowercase: " + ", ".join(mixed))
+        raise SystemExit("category codes must be uppercase: " + ", ".join(mixed))
 
     missing = []
     for folder in ("HAPP", "INCY"):
@@ -69,10 +71,12 @@ def main():
             if not path.is_file():
                 missing.append(f"missing profile {folder}/{name}")
                 continue
-            for code in sorted(profile_codes(path, "ProxySites") - geosite):
-                missing.append(f"{folder}/{name} geosite:{code}")
-            for code in sorted(profile_codes(path, "ProxyIp") - geoip):
-                missing.append(f"{folder}/{name} geoip:{code}")
+            for code in sorted(profile_codes(path, "ProxySites")):
+                if code.upper() not in geosite:
+                    missing.append(f"{folder}/{name} geosite:{code}")
+            for code in sorted(profile_codes(path, "ProxyIp")):
+                if code.upper() not in geoip:
+                    missing.append(f"{folder}/{name} geoip:{code}")
     if missing:
         raise SystemExit("profiles reference missing categories:\n" + "\n".join(missing))
     print(f"verified {len(geosite)} geosite and {len(geoip)} geoip categories")

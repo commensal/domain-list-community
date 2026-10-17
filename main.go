@@ -73,7 +73,9 @@ const (
 
 func makeProtoList(listName string, entries []*Entry) *router.GeoSite {
 	site := &router.GeoSite{
-		CountryCode: listName,
+		// Xray uppercases the code from a geosite: rule and then compares those
+		// bytes exactly. A lowercase code stored here can never be found.
+		CountryCode: strings.ToUpper(listName),
 		Domain:      make([]*router.Domain, 0, len(entries)),
 	}
 	for _, entry := range entries {
