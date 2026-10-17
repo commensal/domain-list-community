@@ -33,7 +33,8 @@ jobs:
           (cd code && go run ./ --outputdir=../ --outputname=geosite.dat)
           python3 code/.github/scripts/pack-geoip.py code/geoip-source geoip.dat
           python3 code/.github/scripts/verify-dat.py geosite.dat geoip.dat code
-          bash code/.github/scripts/update-routing.sh code previous-geosite.dat previous-geoip.dat
+          bash code/.github/scripts/update-routing.sh code previous-geosite.dat previous-geoip.dat \
+            "$PWD/geosite.dat" "$PWD/geoip.dat"
           {
             echo "## Build check"
             echo

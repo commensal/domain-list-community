@@ -7,8 +7,9 @@ set -euo pipefail
 root="${1:?repository root}"
 old_geosite="${2:-}"
 old_geoip="${3:-}"
-new_geosite="$root/geosite.dat"
-new_geoip="$root/geoip.dat"
+# The workflow builds both files in its own directory, not inside the checkout.
+new_geosite="${4:-$root/geosite.dat}"
+new_geoip="${5:-$root/geoip.dat}"
 
 python3 - "$root" "$old_geosite" "$old_geoip" "$new_geosite" "$new_geoip" << 'PY'
 import base64, json, pathlib, sys, time
@@ -172,6 +173,12 @@ page.write_text(html, encoding="utf-8", newline="\n")
 
 print(f"geo_changed={'true' if changed else 'false'}")
 print(f"last_updated={stamp}")
+print(
+    "compared "
+    f"{pathlib.Path(new_geosite).stat().st_size if pathlib.Path(new_geosite).is_file() else 'missing'} "
+    "geosite bytes with "
+    f"{pathlib.Path(old_geosite).stat().st_size if pathlib.Path(old_geosite).is_file() else 'missing'}"
+)
 PY
 
 # LIGHT was a byte-for-byte copy of DEFAULT and is not a third profile.
