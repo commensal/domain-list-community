@@ -45,9 +45,9 @@
 | Назначение | Тип | Адрес | IP |
 | :--- | :--- | :--- | :--- |
 | Remote DNS | DoU | `https://dns.dns-ai.ru/dns-query` | `8.8.8.8` |
-| Domestic DNS | DoU | `https://dns.google/dns-query` | `77.88.8.8` |
+| Domestic DNS | DoU | `https://dns.adguard-dns.com/dns-query` | `94.140.14.14` |
 
-Фиксированные соответствия: `cloudflare-dns.com` → `1.1.1.1`, `dns.google` → `8.8.8.8`.
+Фиксированные соответствия: `cloudflare-dns.com` → `1.1.1.1`, `dns.google` → `8.8.8.8`, `dns.adguard-dns.com` → `94.140.14.14`.
 
 `DomainStrategy` — `AsIs`, `RouteOrder` — `block-proxy-direct`, `GlobalProxy` выключен, `UseChunkFiles` включён.
 
