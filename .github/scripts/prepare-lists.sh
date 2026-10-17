@@ -70,10 +70,11 @@ fi
 for f in "$geoip_source"/*.txt; do
   [ -e "$f" ] || continue
   sort -u "$f" | sed '/^$/d' > "$f.tmp"
-  # geoip refuses an empty list. Keep the placeholder only when the source
-  # list exists but has no usable CIDR (an empty my-ips.txt produces no file).
+  # An empty file is not a category. A placeholder CIDR would publish a group
+  # that no profile references, and an empty my-ips.txt must not do that either.
   if [ ! -s "$f.tmp" ]; then
-    echo "127.0.0.1/32" > "$f.tmp"
+    rm -f "$f" "$f.tmp"
+  else
+    mv "$f.tmp" "$f"
   fi
-  mv "$f.tmp" "$f"
 done
